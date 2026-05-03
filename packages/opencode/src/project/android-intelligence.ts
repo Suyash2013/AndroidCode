@@ -88,6 +88,7 @@ function classifyModule(name: string): ModuleInfo["type"] {
   if (name.startsWith(":feature")) return "feature"
   if (name.startsWith(":core")) return "core"
   if (name.includes("shared")) return "shared"
+  if (name.startsWith(":lib")) return "lib"
   return "other"
 }
 
