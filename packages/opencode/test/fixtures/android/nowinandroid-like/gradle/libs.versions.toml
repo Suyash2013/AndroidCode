@@ -5,7 +5,7 @@ compose-bom = "2024.06.00"
 hilt = "2.51.1"
 
 [libraries]
-androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "androidxCore" }
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "kotlin" }
 hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
 
 [plugins]
