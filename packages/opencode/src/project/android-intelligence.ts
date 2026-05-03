@@ -11,7 +11,6 @@ export interface ModuleInfo {
   type: "app" | "feature" | "core" | "shared" | "lib" | "other"
   relativePath: string
   hasKmp: boolean
-  conventionPlugins: string[]
 }
 
 export interface VersionCatalog {
@@ -87,8 +86,8 @@ function classifyModule(name: string): ModuleInfo["type"] {
   if (name === ":app") return "app"
   if (name.startsWith(":feature")) return "feature"
   if (name.startsWith(":core")) return "core"
-  if (name.includes("shared")) return "shared"
   if (name.startsWith(":lib")) return "lib"
+  if (name.includes("shared")) return "shared"
   return "other"
 }
 
@@ -106,7 +105,7 @@ function discoverModules(cwd: string): ModuleInfo[] {
       const relativePath = name.replace(/^:/, "").replace(/:/g, "/")
       const moduleContent = readText(path.join(cwd, relativePath, "build.gradle.kts")) ?? ""
       const hasKmp = moduleContent.includes('kotlin("multiplatform")')
-      modules.push({ name, type: classifyModule(name), relativePath, hasKmp, conventionPlugins: [] })
+      modules.push({ name, type: classifyModule(name), relativePath, hasKmp })
     }
   }
   return modules
