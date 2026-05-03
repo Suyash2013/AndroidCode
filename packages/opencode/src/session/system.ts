@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from "effect"
 
 import { Instance } from "../project/instance"
+import { forDirectory } from "@/project/android-context"
 
 import PROMPT_ANTHROPIC from "./prompt/anthropic.txt"
 import PROMPT_DEFAULT from "./prompt/default.txt"
@@ -47,7 +48,7 @@ export const layer = Layer.effect(
     return Service.of({
       environment(model) {
         const project = Instance.project
-        return [
+        const parts: string[] = [
           [
             `You are powered by the model named ${model.api.id}. The exact model ID is ${model.providerID}/${model.api.id}`,
             `Here is some useful information about the environment you are running in:`,
@@ -60,6 +61,18 @@ export const layer = Layer.effect(
             `</env>`,
           ].join("\n"),
         ]
+        const androidCtx = forDirectory(Instance.directory)
+        if (androidCtx) {
+          parts.push(
+            [
+              "The current project is an Android project. Here is its detected structure:",
+              "<android_project_context>",
+              androidCtx,
+              "</android_project_context>",
+            ].join("\n"),
+          )
+        }
+        return parts
       },
 
       skills: Effect.fn("SystemPrompt.skills")(function* (agent: Agent.Info) {
