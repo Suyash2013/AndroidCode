@@ -28,6 +28,8 @@ import { Log } from "@/util"
 import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
+import { AndroidTool } from "./android/android"
+import * as AndroidProbe from "./android/probe"
 import { Glob } from "@opencode-ai/shared/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -89,6 +91,7 @@ export const layer: Layer.Layer<
   | Ripgrep.Service
   | Format.Service
   | Truncate.Service
+  | AndroidProbe.Service
 > = Layer.effect(
   Service,
   Effect.gen(function* () {
@@ -114,6 +117,7 @@ export const layer: Layer.Layer<
     const edit = yield* EditTool
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
+    const androidtool = yield* AndroidTool
     const skilltool = yield* SkillTool
     const agent = yield* Agent.Service
 
@@ -201,6 +205,7 @@ export const layer: Layer.Layer<
           code: Tool.init(codesearch),
           skill: Tool.init(skilltool),
           patch: Tool.init(patchtool),
+          android: Tool.init(androidtool),
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
@@ -224,6 +229,7 @@ export const layer: Layer.Layer<
             tool.code,
             tool.skill,
             tool.patch,
+            tool.android,
             ...(Flag.OPENCODE_EXPERIMENTAL_LSP_TOOL ? [tool.lsp] : []),
             ...(Flag.OPENCODE_EXPERIMENTAL_PLAN_MODE && Flag.OPENCODE_CLIENT === "cli" ? [tool.plan] : []),
           ],
@@ -345,5 +351,6 @@ export const defaultLayer = Layer.suspend(() =>
     Layer.provide(CrossSpawnSpawner.defaultLayer),
     Layer.provide(Ripgrep.defaultLayer),
     Layer.provide(Truncate.defaultLayer),
+    Layer.provide(AndroidProbe.layer),
   ),
 )

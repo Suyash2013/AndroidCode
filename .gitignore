@@ -29,3 +29,10 @@ UPCOMING_CHANGELOG.md
 logs/
 *.bun-build
 tsconfig.tsbuildinfo
+.gitnexus
+
+# Local dev artifacts
+.claude/
+.omni-rag/
+scratch-superpowers/
+CLAUDE.md

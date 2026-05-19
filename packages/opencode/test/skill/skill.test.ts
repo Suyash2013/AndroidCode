@@ -1,9 +1,13 @@
-import { describe, expect } from "bun:test"
+import { describe, expect, test } from "bun:test"
 import { Effect, Layer } from "effect"
 import { Skill } from "../../src/skill"
+import { Discovery } from "../../src/skill/discovery"
 import * as CrossSpawnSpawner from "../../src/effect/cross-spawn-spawner"
 import { provideInstance, provideTmpdirInstance, tmpdir } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
+import { Config } from "../../src/config"
+import { Bus } from "../../src/bus"
+import { AppFileSystem } from "@opencode-ai/shared/filesystem"
 import path from "path"
 import fs from "fs/promises"
 
@@ -388,4 +392,115 @@ description: A skill in the .opencode/skills directory.
       { git: true },
     ),
   )
+})
+
+describe("auto-install google skills", () => {
+  test("pulls google skills url when auto_install_google_skills is true", async () => {
+    const pulledUrls: string[] = []
+    const mockDiscovery = Layer.succeed(
+      Discovery.Service,
+      Discovery.Service.of({
+        pull: (url: string) =>
+          Effect.sync(() => {
+            pulledUrls.push(url)
+            return []
+          }),
+      }),
+    )
+
+    await using tmp = await tmpdir({ config: { skills: { auto_install_google_skills: true } } })
+
+    const layers = Skill.layer.pipe(
+      Layer.provide(mockDiscovery),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(Bus.layer),
+      Layer.provide(AppFileSystem.defaultLayer),
+    )
+
+    await Effect.runPromise(
+      provideInstance(tmp.path)(
+        Effect.gen(function* () {
+          const skill = yield* Skill.Service
+          yield* skill.all()
+        }).pipe(Effect.provide(layers)),
+      ),
+    )
+
+    expect(pulledUrls).toContain(Discovery.GOOGLE_SKILLS_URL)
+  })
+
+  test("does not pull google skills url when auto_install_google_skills is false", async () => {
+    const pulledUrls: string[] = []
+    const mockDiscovery = Layer.succeed(
+      Discovery.Service,
+      Discovery.Service.of({
+        pull: (url: string) =>
+          Effect.sync(() => {
+            pulledUrls.push(url)
+            return []
+          }),
+      }),
+    )
+
+    await using tmp = await tmpdir({ config: { skills: { auto_install_google_skills: false } } })
+
+    const layers = Skill.layer.pipe(
+      Layer.provide(mockDiscovery),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(Bus.layer),
+      Layer.provide(AppFileSystem.defaultLayer),
+    )
+
+    await Effect.runPromise(
+      provideInstance(tmp.path)(
+        Effect.gen(function* () {
+          const skill = yield* Skill.Service
+          yield* skill.all()
+        }).pipe(Effect.provide(layers)),
+      ),
+    )
+
+    expect(pulledUrls).not.toContain(Discovery.GOOGLE_SKILLS_URL)
+  })
+
+  test("does not duplicate url when user already configured it", async () => {
+    const pulledUrls: string[] = []
+    const mockDiscovery = Layer.succeed(
+      Discovery.Service,
+      Discovery.Service.of({
+        pull: (url: string) =>
+          Effect.sync(() => {
+            pulledUrls.push(url)
+            return []
+          }),
+      }),
+    )
+
+    await using tmp = await tmpdir({
+      config: {
+        skills: {
+          urls: [Discovery.GOOGLE_SKILLS_URL],
+          auto_install_google_skills: true,
+        },
+      },
+    })
+
+    const layers = Skill.layer.pipe(
+      Layer.provide(mockDiscovery),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(Bus.layer),
+      Layer.provide(AppFileSystem.defaultLayer),
+    )
+
+    await Effect.runPromise(
+      provideInstance(tmp.path)(
+        Effect.gen(function* () {
+          const skill = yield* Skill.Service
+          yield* skill.all()
+        }).pipe(Effect.provide(layers)),
+      ),
+    )
+
+    expect(pulledUrls.filter((u) => u === Discovery.GOOGLE_SKILLS_URL).length).toBe(1)
+  })
 })

@@ -711,14 +711,64 @@ test("defaultAgent throws when all primary agents are disabled", async () => {
       agent: {
         build: { disable: true },
         plan: { disable: true },
+        "android-build": { disable: true },
+        "android-plan": { disable: true },
       },
     },
   })
   await Instance.provide({
     directory: tmp.path,
     fn: async () => {
-      // build and plan are disabled, no primary-capable agents remain
+      // all primary agents are disabled, no primary-capable agents remain
       await expect(load(tmp.path, (svc) => svc.defaultAgent())).rejects.toThrow("no primary visible agent found")
+    },
+  })
+})
+
+test("android-build agent has correct default properties", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const agent = await load(tmp.path, (svc) => svc.get("android-build"))
+      expect(agent).toBeDefined()
+      expect(agent?.mode).toBe("primary")
+      expect(agent?.native).toBe(true)
+      expect(evalPerm(agent, "edit")).toBe("allow")
+      expect(evalPerm(agent, "bash")).toBe("allow")
+      expect(evalPerm(agent, "question")).toBe("allow")
+      expect(agent?.description).toContain("Android development specialist")
+      expect(agent?.prompt).toContain("Android development specialist")
+    },
+  })
+})
+
+test("android-plan agent denies edits", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const agent = await load(tmp.path, (svc) => svc.get("android-plan"))
+      expect(agent).toBeDefined()
+      expect(agent?.mode).toBe("primary")
+      expect(agent?.native).toBe(true)
+      expect(evalPerm(agent, "edit")).toBe("deny")
+      expect(evalPerm(agent, "question")).toBe("allow")
+      expect(agent?.description).toContain("Android architecture and planning specialist")
+      expect(agent?.prompt).toContain("Android architecture and planning specialist")
+    },
+  })
+})
+
+test("android-build and android-plan appear in agent list", async () => {
+  await using tmp = await tmpdir()
+  await Instance.provide({
+    directory: tmp.path,
+    fn: async () => {
+      const agents = await load(tmp.path, (svc) => svc.list())
+      const names = agents.map((a) => a.name)
+      expect(names).toContain("android-build")
+      expect(names).toContain("android-plan")
     },
   })
 })

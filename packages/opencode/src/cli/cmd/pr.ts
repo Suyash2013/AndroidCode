@@ -120,18 +120,18 @@ export const PrCommand = cmd({
 
         UI.println(`Successfully checked out PR #${prNumber} as branch '${localBranchName}'`)
         UI.println()
-        UI.println("Starting opencode...")
+        UI.println("Starting androidcode...")
         UI.println()
 
-        const opencodeArgs = sessionId ? ["-s", sessionId] : []
-        const opencodeProcess = Process.spawn(["opencode", ...opencodeArgs], {
+        const androidcodeArgs = sessionId ? ["-s", sessionId] : []
+        const androidcodeProcess = Process.spawn(["androidcode", ...androidcodeArgs], {
           stdin: "inherit",
           stdout: "inherit",
           stderr: "inherit",
           cwd: process.cwd(),
         })
-        const code = await opencodeProcess.exited
-        if (code !== 0) throw new Error(`opencode exited with code ${code}`)
+        const code = await androidcodeProcess.exited
+        if (code !== 0) throw new Error(`androidcode exited with code ${code}`)
       },
     })
   },

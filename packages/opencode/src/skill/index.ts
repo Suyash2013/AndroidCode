@@ -183,7 +183,11 @@ const discoverSkills = Effect.fnUntraced(function* (
     yield* scan(state, dir, SKILL_PATTERN)
   }
 
-  for (const url of cfg.skills?.urls ?? []) {
+  const urls = new Set(cfg.skills?.urls ?? [])
+  if (cfg.skills?.auto_install_google_skills !== false) {
+    urls.add(Discovery.GOOGLE_SKILLS_URL)
+  }
+  for (const url of urls) {
     const pulledDirs = yield* discovery.pull(url)
     for (const dir of pulledDirs) {
       yield* scan(state, dir, SKILL_PATTERN)

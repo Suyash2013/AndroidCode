@@ -1,103 +1,152 @@
-import z from "zod"
-import { Effect, Layer } from "effect"
-import { Tool } from "../tool"
-import { AndroidProbe } from "./probe"
-import { makeToolResult, ErrorCodes } from "../util/tool-result"
-import { ChildProcessSpawner } from "@/effect/cross-spawn-spawner"
-import { Log } from "../util"
+import { Effect, Schema } from "effect"
+import * as Tool from "../tool"
+import { Service as AndroidProbeService } from "./probe"
+import { Instance } from "../../project/instance"
+import { Log } from "@/util"
+import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
+import { ChildProcess } from "effect/unstable/process"
+import * as Stream from "effect/Stream"
 
 const log = Log.create({ service: "AndroidTool" })
 
-/**
- * The `android` tool is a first-class wrapper around Google's official Android CLI.
- * It serves as the primary interface for SDK management, emulator control, 
- * and app deployment.
- */
-export const AndroidTool = Tool.define("android", Effect.gen(function* () {
-  const spawner = yield* ChildProcessSpawner.Service
-  const probe = yield* AndroidProbe.Service
+export const Parameters = Schema.Struct({
+  subcommand: Schema.String.annotate({
+    description: "The android CLI subcommand (e.g., 'sdk', 'emulator', 'run', 'describe')",
+  }),
+  args: Schema.optional(Schema.Array(Schema.String)).annotate({
+    description: "Arguments for the subcommand as a list of strings",
+  }),
+})
 
-  return {
-    description: "Wrapper for Google's official Android CLI. Used for SDK, emulator, deployment, and layout introspection.",
-    parameters: z.object({
-      subcommand: z.string().describe("The android CLI subcommand (e.g., 'sdk', 'emulator', 'run', 'describe')"),
-      args: z.record(z.string()).describe("Arguments for the subcommand as key-value pairs"),
-    }),
-    execute: (args, ctx) => Effect.gen(function* () {
-      const { subcommand, args: params } = args
-      
-      // 1. Check if subcommand is supported by the current installation
-      const status = yield* probe.status()
-      if (!status.present || !status.availableSubcommands.includes(subcommand)) {
-        
-        // Special case: Windows emulator fallback
-        if (subcommand === "emulator" && process.platform === "win32") {
-          log.info("android emulator unavailable on Windows; using fallback binary path")
-          // The actual fallback binary invocation would go here. 
-          // For now, we'll implement the wrap-with-fallback logic.
-        } else {
-          return {
-            title: `Android CLI: ${subcommand}`,
-            output: `The 'android ${subcommand}' command is not available on this system.`,
-            metadata: {
-              result: makeToolResult({
-                status: "error",
-                error: {
-                  code: ErrorCodes.ANDROID_CLI_UNAVAILABLE,
+type AndroidMetadata = Record<string, unknown>
+
+export const AndroidTool = Tool.define(
+  "android",
+  Effect.gen(function* () {
+    const spawner = yield* ChildProcessSpawner
+    const probe = yield* AndroidProbeService
+
+    return {
+      description:
+        "Wrapper for Google's official Android CLI. Used for SDK, emulator, deployment, and layout introspection.",
+      parameters: Parameters,
+      execute: (params: Schema.Schema.Type<typeof Parameters>, _ctx: Tool.Context) =>
+        Effect.scoped(
+          Effect.gen(function* () {
+            const { subcommand, args = [] } = params
+
+            const status = yield* probe.status()
+
+            if (!status.present || !status.availableSubcommands.includes(subcommand)) {
+              if (subcommand === "emulator" && process.platform === "win32") {
+                log.info("android emulator unavailable on Windows; using fallback binary path")
+
+                const avdCommand = ChildProcess.make("avdmanager", args)
+                const avdHandle = yield* spawner.spawn(avdCommand).pipe(
+                  Effect.catch(() => Effect.succeed(null)),
+                )
+
+                if (avdHandle) {
+                  const avdOut = yield* Stream.mkString(Stream.decodeText(avdHandle.stdout)).pipe(
+                    Effect.catch(() => Effect.succeed("")),
+                  )
+                  if (avdOut) {
+                    return {
+                      title: "Android CLI: emulator (Windows fallback)",
+                      output: avdOut || "(no output)",
+                      metadata: {
+                        fallback: true,
+                        originalCommand: "android emulator",
+                      } as AndroidMetadata,
+                    }
+                  }
+                }
+
+                const emulatorCommand = ChildProcess.make("emulator", args)
+                const emulatorHandle = yield* spawner.spawn(emulatorCommand).pipe(
+                  Effect.catch(() => Effect.succeed(null)),
+                )
+
+                if (emulatorHandle) {
+                  const emuOut = yield* Stream.mkString(Stream.decodeText(emulatorHandle.stdout)).pipe(
+                    Effect.catch(() => Effect.succeed("")),
+                  )
+                  if (emuOut) {
+                    return {
+                      title: "Android CLI: emulator (Windows fallback)",
+                      output: emuOut || "(no output)",
+                      metadata: {
+                        fallback: true,
+                        originalCommand: "android emulator",
+                      } as AndroidMetadata,
+                    }
+                  }
+                }
+
+                return {
+                  title: "Android CLI: emulator (Windows fallback)",
+                  output: "Neither 'avdmanager' nor 'emulator' fallback binary is available on this system.",
+                  metadata: {
+                    fallback: true,
+                    originalCommand: "android emulator",
+                    error: true,
+                    code: "ANDROID_CLI_UNAVAILABLE",
+                  } as AndroidMetadata,
+                }
+              }
+
+              return {
+                title: `Android CLI: ${subcommand}`,
+                output: `The 'android ${subcommand}' command is not available on this system.`,
+                metadata: {
+                  error: true,
+                  code: "ANDROID_CLI_UNAVAILABLE",
                   message: `Subcommand '${subcommand}' is not available.`,
                   recoverable: false,
-                },
-              }),
-            },
-          }
-        }
-      }
+                } as AndroidMetadata,
+              }
+            }
 
-      // 2. Convert args record to shell array
-      const shellArgs = [subcommand]
-      for (const [key, value] of Object.entries(params)) {
-        shellArgs.push(`${key}=${value}`)
-      }
+            const command = ChildProcess.make("android", [subcommand, ...args], {
+              cwd: Instance.directory,
+            })
 
-      // 3. Execute and parse
-      const result = yield* Effect.promise(() => 
-        spawner.spawn("android", shellArgs)
-      )
+            const handle = yield* spawner.spawn(command)
 
-      if (result.error) {
-        return {
-          title: `Android CLI: ${subcommand}`,
-          output: result.stderr || result.error.toString(),
-          metadata: {
-            result: makeToolResult({
-              status: "error",
-              error: {
-                code: ErrorCodes.BUILD_FAILED, // Generic failure for now
-                message: `Command 'android ${subcommand}' failed.`,
-                recoverable: true,
-              },
-            }),
-          },
-        }
-      }
+            const stdout = yield* Stream.mkString(Stream.decodeText(handle.stdout)).pipe(
+              Effect.catch(() => Effect.succeed("")),
+            )
+            const stderr = yield* Stream.mkString(Stream.decodeText(handle.stderr)).pipe(
+              Effect.catch(() => Effect.succeed("")),
+            )
+            const exitCode = yield* handle.exitCode.pipe(
+              Effect.catch(() => Effect.succeed(-1)),
+            )
 
-      return {
-        title: `Android CLI: ${subcommand}`,
-        output: result.stdout,
-        metadata: {
-          result: makeToolResult({
-            status: "success",
-            data: { raw: result.stdout },
-          }),
-        },
-      }
-    }),
-  }
-}))
+            if (exitCode !== 0) {
+              return {
+                title: `Android CLI: ${subcommand}`,
+                output: stderr || stdout || `Command 'android ${subcommand}' failed with exit code ${exitCode}.`,
+                metadata: {
+                  error: true,
+                  code: "BUILD_FAILED",
+                  message: `Command 'android ${subcommand}' failed.`,
+                  recoverable: true,
+                  exitCode,
+                } as AndroidMetadata,
+              }
+            }
 
-export const layer = Layer.provide(
-  AndroidTool.layer,
-  AndroidProbe.layer
+            return {
+              title: `Android CLI: ${subcommand}`,
+              output: stdout || "(no output)",
+              metadata: {
+                error: false,
+                exitCode,
+              } as AndroidMetadata,
+            }
+          }).pipe(Effect.orDie),
+        ),
+    }
+  }),
 )
-
-export * as AndroidTool from "."

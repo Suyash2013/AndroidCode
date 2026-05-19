@@ -13,6 +13,8 @@ import PROMPT_COMPACTION from "./prompt/compaction.txt"
 import PROMPT_EXPLORE from "./prompt/explore.txt"
 import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
+import PROMPT_ANDROID_BUILD from "./prompt/android-build.txt"
+import PROMPT_ANDROID_PLAN from "./prompt/android-plan.txt"
 import { Permission } from "@/permission"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
 import { Global } from "@/global"
@@ -135,6 +137,7 @@ export const layer = Layer.effect(
                 },
                 edit: {
                   "*": "deny",
+                  [path.join(".androidcode", "plans", "*.md")]: "allow",
                   [path.join(".opencode", "plans", "*.md")]: "allow",
                   [path.relative(Instance.worktree, path.join(Global.Path.data, path.join("plans", "*.md")))]: "allow",
                 },
@@ -230,6 +233,43 @@ export const layer = Layer.effect(
               user,
             ),
             prompt: PROMPT_SUMMARY,
+          },
+          "android-build": {
+            name: "android-build",
+            description:
+              "Android development specialist. Use for writing features, fixing bugs, refactoring, and any code modification task in Android projects. Understands Gradle modules, Android lifecycle, Compose, Views, and KMP.",
+            options: {},
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                question: "allow",
+                plan_enter: "allow",
+              }),
+              user,
+            ),
+            mode: "primary",
+            native: true,
+            prompt: PROMPT_ANDROID_BUILD,
+            model: { providerID: ProviderID.anthropic, modelID: "claude-sonnet-4-6" as ModelID },
+          },
+          "android-plan": {
+            name: "android-plan",
+            description:
+              "Android architecture and planning specialist. Use for design reviews, modularization advice, dependency analysis, and long-term planning. Does not modify code.",
+            options: {},
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                question: "allow",
+                plan_exit: "allow",
+                edit: { "*": "deny" },
+              }),
+              user,
+            ),
+            mode: "primary",
+            native: true,
+            prompt: PROMPT_ANDROID_PLAN,
+            model: { providerID: ProviderID.anthropic, modelID: "claude-opus-4-7" as ModelID },
           },
         }
 

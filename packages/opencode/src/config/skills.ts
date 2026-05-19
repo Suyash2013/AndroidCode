@@ -9,6 +9,9 @@ export const Info = Schema.Struct({
   urls: Schema.optional(Schema.Array(Schema.String)).annotate({
     description: "URLs to fetch skills from (e.g., https://example.com/.well-known/skills/)",
   }),
+  auto_install_google_skills: Schema.optional(Schema.Boolean).annotate({
+    description: "Automatically install Google's official Android skills on first use",
+  }),
 }).pipe(withStatics((s) => ({ zod: zod(s) })))
 
 export type Info = Schema.Schema.Type<typeof Info>

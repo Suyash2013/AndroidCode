@@ -9,6 +9,8 @@ import { Log } from "../util"
 const skillConcurrency = 4
 const fileConcurrency = 8
 
+export const GOOGLE_SKILLS_URL = "https://goo.gle/android-skills"
+
 class IndexSkill extends Schema.Class<IndexSkill>("IndexSkill")({
   name: Schema.String,
   files: Schema.Array(Schema.String),
