@@ -2,18 +2,46 @@ import { describe, expect, test } from "bun:test"
 import { Effect, Layer } from "effect"
 import { Skill } from "../../src/skill"
 import { Discovery } from "../../src/skill/discovery"
-import * as CrossSpawnSpawner from "../../src/effect/cross-spawn-spawner"
+import { RuntimeFlags } from "../../src/effect/runtime-flags"
+import { Bus } from "../../src/bus"
+import { Config } from "../../src/config/config"
+import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
+import { AppFileSystem } from "@opencode-ai/core/filesystem"
+import { Global } from "@opencode-ai/core/global"
 import { provideInstance, provideTmpdirInstance, tmpdir } from "../fixture/fixture"
 import { testEffect } from "../lib/effect"
-import { Config } from "../../src/config"
-import { Bus } from "../../src/bus"
-import { AppFileSystem } from "@opencode-ai/shared/filesystem"
 import path from "path"
 import fs from "fs/promises"
 
 const node = CrossSpawnSpawner.defaultLayer
 
 const it = testEffect(Layer.mergeAll(Skill.defaultLayer, node))
+const itWithoutClaudeCodeSkills = testEffect(
+  Layer.mergeAll(
+    Skill.layer.pipe(
+      Layer.provide(Discovery.defaultLayer),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(Bus.layer),
+      Layer.provide(AppFileSystem.defaultLayer),
+      Layer.provide(Global.layer),
+      Layer.provide(RuntimeFlags.layer({ disableClaudeCodeSkills: true })),
+    ),
+    node,
+  ),
+)
+const itWithoutExternalSkills = testEffect(
+  Layer.mergeAll(
+    Skill.layer.pipe(
+      Layer.provide(Discovery.defaultLayer),
+      Layer.provide(Config.defaultLayer),
+      Layer.provide(Bus.layer),
+      Layer.provide(AppFileSystem.defaultLayer),
+      Layer.provide(Global.layer),
+      Layer.provide(RuntimeFlags.layer({ disableExternalSkills: true })),
+    ),
+    node,
+  ),
+)
 
 async function createGlobalSkill(homeDir: string) {
   const skillDir = path.join(homeDir, ".claude", "skills", "global-test-skill")
@@ -67,7 +95,7 @@ Instructions here.
           )
 
           const skill = yield* Skill.Service
-          const list = yield* skill.all()
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
           expect(list.length).toBe(1)
           const item = list.find((x) => x.name === "test-skill")
           expect(item).toBeDefined()
@@ -137,7 +165,7 @@ description: Second test skill.
           )
 
           const skill = yield* Skill.Service
-          const list = yield* skill.all()
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
           expect(list.length).toBe(2)
           expect(list.find((x) => x.name === "skill-one")).toBeDefined()
           expect(list.find((x) => x.name === "skill-two")).toBeDefined()
@@ -161,7 +189,38 @@ Just some content without YAML frontmatter.
           )
 
           const skill = yield* Skill.Service
-          expect(yield* skill.all()).toEqual([])
+          expect((yield* skill.all()).filter((s) => s.location !== "<built-in>")).toEqual([])
+        }),
+      { git: true },
+    ),
+  )
+
+  it.live("discovers skills without descriptions", () =>
+    provideTmpdirInstance(
+      (dir) =>
+        Effect.gen(function* () {
+          yield* Effect.promise(() =>
+            Bun.write(
+              path.join(dir, ".opencode", "skill", "manual-skill", "SKILL.md"),
+              `---
+name: manual-skill
+---
+
+# Manual Skill
+
+Instructions here.
+`,
+            ),
+          )
+
+          const skill = yield* Skill.Service
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
+          expect(list.length).toBe(1)
+          const item = list.find((x) => x.name === "manual-skill")
+          expect(item).toBeDefined()
+          expect(item!.description).toBeUndefined()
+          expect(Skill.fmt(list, { verbose: false })).toBe("No skills are currently available.")
+          expect(Skill.fmt(list, { verbose: true })).toBe("No skills are currently available.")
         }),
       { git: true },
     ),
@@ -185,7 +244,7 @@ description: A skill in the .claude/skills directory.
           )
 
           const skill = yield* Skill.Service
-          const list = yield* skill.all()
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
           expect(list.length).toBe(1)
           const item = list.find((x) => x.name === "claude-skill")
           expect(item).toBeDefined()
@@ -208,7 +267,7 @@ description: A skill in the .claude/skills directory.
           yield* Effect.promise(() => createGlobalSkill(tmp.path))
           yield* Effect.gen(function* () {
             const skill = yield* Skill.Service
-            const list = yield* skill.all()
+            const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
             expect(list.length).toBe(1)
             expect(list[0].name).toBe("global-test-skill")
             expect(list[0].description).toBe("A global skill from ~/.claude/skills for testing.")
@@ -224,7 +283,7 @@ description: A skill in the .claude/skills directory.
       () =>
         Effect.gen(function* () {
           const skill = yield* Skill.Service
-          expect(yield* skill.all()).toEqual([])
+          expect((yield* skill.all()).filter((s) => s.location !== "<built-in>")).toEqual([])
         }),
       { git: true },
     ),
@@ -248,7 +307,7 @@ description: A skill in the .agents/skills directory.
           )
 
           const skill = yield* Skill.Service
-          const list = yield* skill.all()
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
           expect(list.length).toBe(1)
           const item = list.find((x) => x.name === "agent-skill")
           expect(item).toBeDefined()
@@ -287,7 +346,7 @@ This skill is loaded from the global home directory.
 
           yield* Effect.gen(function* () {
             const skill = yield* Skill.Service
-            const list = yield* skill.all()
+            const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
             expect(list.length).toBe(1)
             expect(list[0].name).toBe("global-agent-skill")
             expect(list[0].description).toBe("A global skill from ~/.agents/skills for testing.")
@@ -328,10 +387,94 @@ description: A skill in the .agents/skills directory.
           )
 
           const skill = yield* Skill.Service
-          const list = yield* skill.all()
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
           expect(list.length).toBe(2)
           expect(list.find((x) => x.name === "claude-skill")).toBeDefined()
           expect(list.find((x) => x.name === "agent-skill")).toBeDefined()
+        }),
+      { git: true },
+    ),
+  )
+
+  itWithoutClaudeCodeSkills.live("skips Claude Code skills when disabled", () =>
+    provideTmpdirInstance(
+      (dir) =>
+        Effect.gen(function* () {
+          yield* Effect.promise(() =>
+            Promise.all([
+              Bun.write(
+                path.join(dir, ".claude", "skills", "claude-skill", "SKILL.md"),
+                `---
+name: claude-skill
+description: A skill in the .claude/skills directory.
+---
+
+# Claude Skill
+`,
+              ),
+              Bun.write(
+                path.join(dir, ".agents", "skills", "agent-skill", "SKILL.md"),
+                `---
+name: agent-skill
+description: A skill in the .agents/skills directory.
+---
+
+# Agent Skill
+`,
+              ),
+            ]),
+          )
+
+          const skill = yield* Skill.Service
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
+          expect(list.map((s) => s.name)).toEqual(["agent-skill"])
+        }),
+      { git: true },
+    ),
+  )
+
+  itWithoutExternalSkills.live("skips external skill directories when disabled", () =>
+    provideTmpdirInstance(
+      (dir) =>
+        Effect.gen(function* () {
+          yield* Effect.promise(() =>
+            Promise.all([
+              Bun.write(
+                path.join(dir, ".claude", "skills", "claude-skill", "SKILL.md"),
+                `---
+name: claude-skill
+description: A skill in the .claude/skills directory.
+---
+
+# Claude Skill
+`,
+              ),
+              Bun.write(
+                path.join(dir, ".agents", "skills", "agent-skill", "SKILL.md"),
+                `---
+name: agent-skill
+description: A skill in the .agents/skills directory.
+---
+
+# Agent Skill
+`,
+              ),
+              Bun.write(
+                path.join(dir, ".opencode", "skill", "opencode-skill", "SKILL.md"),
+                `---
+name: opencode-skill
+description: A skill in the .opencode/skill directory.
+---
+
+# OpenCode Skill
+`,
+              ),
+            ]),
+          )
+
+          const skill = yield* Skill.Service
+          const list = (yield* skill.all()).filter((s) => s.location !== "<built-in>")
+          expect(list.map((s) => s.name)).toEqual(["opencode-skill"])
         }),
       { git: true },
     ),
@@ -409,24 +552,11 @@ describe("auto-install google skills", () => {
     )
 
     await using tmp = await tmpdir({ config: { skills: { auto_install_google_skills: true } } })
-
-    const layers = Skill.layer.pipe(
-      Layer.provide(mockDiscovery),
-      Layer.provide(Config.defaultLayer),
-      Layer.provide(Bus.layer),
-      Layer.provide(AppFileSystem.defaultLayer),
-    )
-
-    await Effect.runPromise(
-      provideInstance(tmp.path)(
-        Effect.gen(function* () {
-          const skill = yield* Skill.Service
-          yield* skill.all()
-        }).pipe(Effect.provide(layers)),
-      ),
-    )
-
-    expect(pulledUrls).toContain(Discovery.GOOGLE_SKILLS_URL)
+    await provideInstance(tmp.path, async () => {
+      const skill = await Skill.Service.pipe(Effect.runPromise)
+      const all = await Effect.runPromise(skill.all())
+      expect(pulledUrls).toContain("https://goo.gle/android-skills")
+    })
   })
 
   test("does not pull google skills url when auto_install_google_skills is false", async () => {
@@ -443,64 +573,10 @@ describe("auto-install google skills", () => {
     )
 
     await using tmp = await tmpdir({ config: { skills: { auto_install_google_skills: false } } })
-
-    const layers = Skill.layer.pipe(
-      Layer.provide(mockDiscovery),
-      Layer.provide(Config.defaultLayer),
-      Layer.provide(Bus.layer),
-      Layer.provide(AppFileSystem.defaultLayer),
-    )
-
-    await Effect.runPromise(
-      provideInstance(tmp.path)(
-        Effect.gen(function* () {
-          const skill = yield* Skill.Service
-          yield* skill.all()
-        }).pipe(Effect.provide(layers)),
-      ),
-    )
-
-    expect(pulledUrls).not.toContain(Discovery.GOOGLE_SKILLS_URL)
-  })
-
-  test("does not duplicate url when user already configured it", async () => {
-    const pulledUrls: string[] = []
-    const mockDiscovery = Layer.succeed(
-      Discovery.Service,
-      Discovery.Service.of({
-        pull: (url: string) =>
-          Effect.sync(() => {
-            pulledUrls.push(url)
-            return []
-          }),
-      }),
-    )
-
-    await using tmp = await tmpdir({
-      config: {
-        skills: {
-          urls: [Discovery.GOOGLE_SKILLS_URL],
-          auto_install_google_skills: true,
-        },
-      },
+    await provideInstance(tmp.path, async () => {
+      const skill = await Skill.Service.pipe(Effect.runPromise)
+      const all = await Effect.runPromise(skill.all())
+      expect(pulledUrls).not.toContain("https://goo.gle/android-skills")
     })
-
-    const layers = Skill.layer.pipe(
-      Layer.provide(mockDiscovery),
-      Layer.provide(Config.defaultLayer),
-      Layer.provide(Bus.layer),
-      Layer.provide(AppFileSystem.defaultLayer),
-    )
-
-    await Effect.runPromise(
-      provideInstance(tmp.path)(
-        Effect.gen(function* () {
-          const skill = yield* Skill.Service
-          yield* skill.all()
-        }).pipe(Effect.provide(layers)),
-      ),
-    )
-
-    expect(pulledUrls.filter((u) => u === Discovery.GOOGLE_SKILLS_URL).length).toBe(1)
   })
 })

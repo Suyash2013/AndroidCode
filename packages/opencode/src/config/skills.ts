@@ -1,6 +1,4 @@
 import { Schema } from "effect"
-import { zod } from "@/util/effect-zod"
-import { withStatics } from "@/util/schema"
 
 export const Info = Schema.Struct({
   paths: Schema.optional(Schema.Array(Schema.String)).annotate({
@@ -12,7 +10,7 @@ export const Info = Schema.Struct({
   auto_install_google_skills: Schema.optional(Schema.Boolean).annotate({
     description: "Automatically install Google's official Android skills on first use",
   }),
-}).pipe(withStatics((s) => ({ zod: zod(s) })))
+})
 
 export type Info = Schema.Schema.Type<typeof Info>
 
