@@ -23,7 +23,8 @@ import { ulid } from "ulid"
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
 import * as Stream from "effect/Stream"
-import { Command } from "../command"
+import { Command, SkillsCommand } from "../command"
+import { Skill } from "../skill"
 import { pathToFileURL, fileURLToPath } from "url"
 import { Config } from "@/config/config"
 import { ConfigMarkdown } from "@/config/markdown"
@@ -1417,8 +1418,23 @@ export const layer = Layer.effect(
 
             yield* plugin.trigger("experimental.chat.messages.transform", {}, { messages: msgs })
 
+            const lastUserMessage = lastUserMsg
+              ? lastUserMsg.parts
+                  .filter((p) => p.type === "text" && !(p as { ignored?: boolean; synthetic?: boolean }).ignored && !(p as { ignored?: boolean; synthetic?: boolean }).synthetic)
+                  .map((p) => (p as { text: string }).text)
+                  .join("\n")
+              : undefined
+            const recentFiles: string[] = []
+            if (lastUserMsg) {
+              for (const p of lastUserMsg.parts) {
+                if (p.type === "file" && "path" in p) {
+                  recentFiles.push((p as { path: string }).path)
+                }
+              }
+            }
+
             const [skills, env, instructions, modelMsgs] = yield* Effect.all([
-              sys.skills(agent),
+              sys.skills(agent, lastUserMessage ? { lastUserMessage, recentFiles } : undefined),
               sys.environment(model),
               instruction.system().pipe(Effect.orDie),
               MessageV2.toModelMessagesEffect(msgs, model),
@@ -1505,6 +1521,73 @@ export const layer = Layer.effect(
         yield* bus.publish(Session.Event.Error, { sessionID: input.sessionID, error: error.toObject() })
         throw error
       }
+
+      // Handle /skills action commands
+      if (input.command === SkillsCommand.LIST || input.command.startsWith("skills ")) {
+        const skillSvc = yield* Skill.Service
+        const subcommand = input.arguments.trim()
+        const subcommandName = subcommand.split(" ")[0] || ""
+        const subcommandArg = subcommand.split(" ").slice(1).join(" ").trim()
+
+        if (subcommandName === "" || subcommandName === "list") {
+          const scores = yield* skillSvc.lastScores()
+          const lines = ["## Active Skills"]
+          if (scores.length === 0) {
+            lines.push("No skills are currently selected.")
+          } else {
+            for (const s of scores) {
+              lines.push(`- **${s.skill.name}**: score=${s.score}, reasons=[${s.reasons.join(", ")}]`)
+            }
+          }
+          return yield* prompt({
+            sessionID: input.sessionID,
+            messageID: input.messageID,
+            model: yield* currentModel(input.sessionID),
+            agent: input.agent,
+            parts: [{ type: "text" as const, text: lines.join("\n") }],
+            variant: input.variant,
+          })
+        }
+
+        if (subcommandName === "add") {
+          const name = subcommandArg
+          yield* skillSvc.addOverride(name)
+          return yield* prompt({
+            sessionID: input.sessionID,
+            messageID: input.messageID,
+            model: yield* currentModel(input.sessionID),
+            agent: input.agent,
+            parts: [{ type: "text" as const, text: `Skill override added: **${name}** will be active for this session.` }],
+            variant: input.variant,
+          })
+        }
+
+        if (subcommandName === "remove") {
+          const name = subcommandArg
+          yield* skillSvc.removeOverride(name)
+          return yield* prompt({
+            sessionID: input.sessionID,
+            messageID: input.messageID,
+            model: yield* currentModel(input.sessionID),
+            agent: input.agent,
+            parts: [{ type: "text" as const, text: `Skill override removed: **${name}** will be excluded for this session.` }],
+            variant: input.variant,
+          })
+        }
+
+        if (subcommandName === "reset") {
+          yield* skillSvc.resetOverrides()
+          return yield* prompt({
+            sessionID: input.sessionID,
+            messageID: input.messageID,
+            model: yield* currentModel(input.sessionID),
+            agent: input.agent,
+            parts: [{ type: "text" as const, text: "All skill overrides cleared. Router is back in control." }],
+            variant: input.variant,
+          })
+        }
+      }
+
       const agentName = cmd.agent ?? input.agent
 
       const raw = input.arguments.match(argsRegex) ?? []

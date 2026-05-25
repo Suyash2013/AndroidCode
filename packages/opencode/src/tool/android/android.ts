@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect"
 import * as Tool from "../tool"
 import { Service as AndroidProbeService } from "./probe"
-import { Instance } from "../../project/instance"
+import { InstanceState } from "@/effect/instance-state"
 import { Log } from "@/util"
 import { ChildProcessSpawner } from "effect/unstable/process/ChildProcessSpawner"
 import { ChildProcess } from "effect/unstable/process"
@@ -107,8 +107,9 @@ export const AndroidTool = Tool.define(
               }
             }
 
+            const instance = yield* InstanceState.context
             const command = ChildProcess.make("android", [subcommand, ...args], {
-              cwd: Instance.directory,
+              cwd: instance.directory,
             })
 
             const handle = yield* spawner.spawn(command)

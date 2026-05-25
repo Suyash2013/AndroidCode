@@ -14,6 +14,11 @@ import { RuntimeFlags } from "@/effect/runtime-flags"
 import { Glob } from "@opencode-ai/core/util/glob"
 import * as Log from "@opencode-ai/core/util/log"
 import { Discovery } from "./discovery"
+import { OrchestrationSchema } from "./orchestration"
+import { Info } from "./types"
+import type { ScoredSkill } from "./types"
+import { select as routerSelect } from "./router"
+import { analyze } from "./task-analyzer"
 import CUSTOMIZE_OPENCODE_SKILL_BODY from "./prompt/customize-opencode.md" with { type: "text" }
 import { isRecord } from "@/util/record"
 
@@ -29,17 +34,17 @@ const SKILL_PATTERN = "**/SKILL.md"
 // invalid config, so users hit cryptic startup errors. Loading this skill
 // when the model is asked to touch opencode's own config files gives it the
 // actual schemas instead of guesses.
+// Bootstrap skills ship in `.agents/skills/` and are always loaded into the
+// system prompt regardless of the router's task-relevance scoring. They give
+// the agent baseline awareness of the skill system and Android conventions.
+const BOOTSTRAP_SKILL_NAMES = ["skill-router", "android-core", "skill-guide"]
+
 const CUSTOMIZE_OPENCODE_SKILL_NAME = "customize-opencode"
 const CUSTOMIZE_OPENCODE_SKILL_DESCRIPTION =
   "Use ONLY when the user is editing or creating opencode's own configuration: opencode.json, opencode.jsonc, files under .opencode/, or files under ~/.config/opencode/. Also use when creating or fixing opencode agents, subagents, skills, plugins, MCP servers, or permission rules. Do not use for the user's own application code, or for any project that is not configuring opencode itself."
 
-export const Info = Schema.Struct({
-  name: Schema.String,
-  description: Schema.optional(Schema.String),
-  location: Schema.String,
-  content: Schema.String,
-})
-export type Info = Schema.Schema.Type<typeof Info>
+export { Info }
+export type { ScoredSkill }
 
 const Issue = Schema.StructWithRest(
   Schema.Struct({
@@ -49,7 +54,9 @@ const Issue = Schema.StructWithRest(
   [Schema.Record(Schema.String, Schema.Unknown)],
 )
 
-function isSkillFrontmatter(data: unknown): data is { name: string; description?: string } {
+function isSkillFrontmatter(
+  data: unknown,
+): data is { name: string; description?: string; orchestration?: unknown; metadata?: { orchestration?: unknown } } {
   return (
     isRecord(data) &&
     typeof data.name === "string" &&
@@ -72,6 +79,9 @@ export const NameMismatchError = NamedError.create("SkillNameMismatchError", {
 type State = {
   skills: Record<string, Info>
   dirs: Set<string>
+  overrides: Set<string>
+  exclusions: Set<string>
+  lastSelection: { selected: Info[]; scores: ScoredSkill[] } | undefined
 }
 
 type DiscoveryState = {
@@ -89,6 +99,16 @@ export interface Interface {
   readonly all: () => Effect.Effect<Info[]>
   readonly dirs: () => Effect.Effect<string[]>
   readonly available: (agent?: Agent.Info) => Effect.Effect<Info[]>
+  readonly analyzeAndSelect: (
+    agent: Agent.Info | undefined,
+    lastUserMessage: string,
+    recentFiles: string[],
+  ) => Effect.Effect<{ selected: Info[]; scores: ScoredSkill[] }>
+  readonly selected: (agent?: Agent.Info) => Effect.Effect<Info[]>
+  readonly addOverride: (name: string) => Effect.Effect<void>
+  readonly removeOverride: (name: string) => Effect.Effect<void>
+  readonly resetOverrides: () => Effect.Effect<void>
+  readonly lastScores: () => Effect.Effect<ScoredSkill[]>
 }
 
 const add = Effect.fnUntraced(function* (state: State, match: string, bus: Bus.Interface) {
@@ -113,6 +133,16 @@ const add = Effect.fnUntraced(function* (state: State, match: string, bus: Bus.I
 
   if (!isSkillFrontmatter(md.data)) return
 
+  const rawOrchestration = md.data.orchestration ?? md.data.metadata?.orchestration
+  const orchestration = rawOrchestration
+    ? yield* Schema.decodeUnknownEffect(OrchestrationSchema)(rawOrchestration).pipe(
+        Effect.catch((err) => {
+          log.warn("failed to parse orchestration metadata", { skill: match, err: String(err) })
+          return Effect.succeed(undefined)
+        }),
+      )
+    : undefined
+
   if (state.skills[md.data.name]) {
     log.warn("duplicate skill name", {
       name: md.data.name,
@@ -127,6 +157,7 @@ const add = Effect.fnUntraced(function* (state: State, match: string, bus: Bus.I
     description: md.data.description,
     location: match,
     content: md.content,
+    orchestration,
   }
 })
 
@@ -262,7 +293,7 @@ export const layer = Layer.effect(
     )
     const state = yield* InstanceState.make(
       Effect.fn("Skill.state")(function* () {
-        const s: State = { skills: {}, dirs: new Set() }
+        const s: State = { skills: {}, dirs: new Set(), overrides: new Set(), exclusions: new Set(), lastSelection: undefined }
         // Register the built-in skill BEFORE disk discovery so a user-disk
         // skill with the same name can override it.
         s.skills[CUSTOMIZE_OPENCODE_SKILL_NAME] = {
@@ -297,7 +328,85 @@ export const layer = Layer.effect(
       return list.filter((skill) => Permission.evaluate("skill", skill.name, agent.permission).action !== "deny")
     })
 
-    return Service.of({ get, all, dirs, available })
+    const analyzeAndSelect = Effect.fn("Skill.analyzeAndSelect")(function* (
+      agent: Agent.Info | undefined,
+      lastUserMessage: string,
+      recentFiles: string[],
+    ) {
+      const s = yield* InstanceState.get(state)
+      const cfg = yield* config.get()
+      const maxActive = cfg.skills?.max_active_skills ?? 5
+
+      const availableList = agent
+        ? Object.values(s.skills).filter(
+            (skill) => Permission.evaluate("skill", skill.name, agent.permission).action !== "deny",
+          )
+        : Object.values(s.skills)
+
+      const analysis = analyze(lastUserMessage, recentFiles)
+      const result = routerSelect(
+        availableList,
+        analysis,
+        maxActive,
+        {
+          include: Array.from(s.overrides),
+          exclude: Array.from(s.exclusions),
+        },
+        BOOTSTRAP_SKILL_NAMES,
+      )
+
+      const previous = s.lastSelection?.selected.map((skill) => skill.name) ?? []
+      const current = result.selected.map((skill) => skill.name)
+      if (previous.join(",") !== current.join(",")) {
+        log.info("skill selection changed", { taskType: analysis.taskType, from: previous, to: current })
+      }
+
+      s.lastSelection = result
+      return result
+    })
+
+    const selected = Effect.fn("Skill.selected")(function* (agent?: Agent.Info) {
+      const s = yield* InstanceState.get(state)
+      if (s.lastSelection) {
+        const availableNames = new Set(
+          agent
+            ? Object.values(s.skills)
+                .filter((skill) => Permission.evaluate("skill", skill.name, agent.permission).action !== "deny")
+                .map((s) => s.name)
+            : Object.keys(s.skills),
+        )
+        return s.lastSelection.selected.filter((skill) => availableNames.has(skill.name))
+      }
+      return yield* available(agent)
+    })
+
+    const addOverride = Effect.fn("Skill.addOverride")(function* (name: string) {
+      const s = yield* InstanceState.get(state)
+      s.overrides.add(name)
+      s.exclusions.delete(name)
+      log.info("skill override added", { name })
+    })
+
+    const removeOverride = Effect.fn("Skill.removeOverride")(function* (name: string) {
+      const s = yield* InstanceState.get(state)
+      s.exclusions.add(name)
+      s.overrides.delete(name)
+      log.info("skill override removed", { name })
+    })
+
+    const resetOverrides = Effect.fn("Skill.resetOverrides")(function* () {
+      const s = yield* InstanceState.get(state)
+      s.overrides.clear()
+      s.exclusions.clear()
+      log.info("skill overrides reset")
+    })
+
+    const lastScores = Effect.fn("Skill.lastScores")(function* () {
+      const s = yield* InstanceState.get(state)
+      return s.lastSelection?.scores ?? []
+    })
+
+    return Service.of({ get, all, dirs, available, analyzeAndSelect, selected, addOverride, removeOverride, resetOverrides, lastScores })
   }),
 )
 

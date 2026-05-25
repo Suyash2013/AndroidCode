@@ -55,6 +55,13 @@ export const Default = {
   REVIEW: "review",
 } as const
 
+export const SkillsCommand = {
+  LIST: "skills",
+  ADD: "skills add",
+  REMOVE: "skills remove",
+  RESET: "skills reset",
+} as const
+
 export interface Interface {
   readonly get: (name: string) => Effect.Effect<Info | undefined>
   readonly list: () => Effect.Effect<Info[]>
@@ -92,6 +99,16 @@ export const layer = Layer.effect(
         },
         subtask: true,
         hints: hints(PROMPT_REVIEW),
+      }
+
+      commands[SkillsCommand.LIST] = {
+        name: SkillsCommand.LIST,
+        description: "List active skills with scores and selection reasons. Usage: /skills [list|add <name>|remove <name>|reset]",
+        source: "command",
+        get template() {
+          return "__SKILLS__"
+        },
+        hints: ["$ARGUMENTS"],
       }
 
       for (const [name, command] of Object.entries(cfg.command ?? {})) {

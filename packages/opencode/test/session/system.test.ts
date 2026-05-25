@@ -50,6 +50,12 @@ const it = testEffect(
           all: () => Effect.succeed(skills),
           dirs: () => Effect.succeed([]),
           available: () => Effect.succeed(skills),
+          analyzeAndSelect: () => Effect.succeed({ selected: skills, scores: [] }),
+          selected: () => Effect.succeed(skills),
+          addOverride: () => Effect.void,
+          removeOverride: () => Effect.void,
+          resetOverrides: () => Effect.void,
+          lastScores: () => Effect.succeed([]),
         }),
       ),
     ),
@@ -74,6 +80,15 @@ describe("session.system", () => {
       expect(middle).toBeGreaterThan(alpha)
       expect(zeta).toBeGreaterThan(middle)
       expect(output).not.toContain("manual-skill")
+    }),
+  )
+
+  it.effect("skills output includes turnContext parameter", () =>
+    Effect.gen(function* () {
+      const prompt = yield* SystemPrompt.Service
+      const output = yield* prompt.skills(build, { lastUserMessage: "debug crash", recentFiles: [] })
+      expect(output).toBeDefined()
+      expect(output).toContain("available_skills")
     }),
   )
 })

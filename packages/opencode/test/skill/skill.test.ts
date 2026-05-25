@@ -535,6 +535,78 @@ description: A skill in the .opencode/skills directory.
       { git: true },
     ),
   )
+
+  it.live("parses orchestration metadata from skill frontmatter", () =>
+    provideTmpdirInstance(
+      (dir) =>
+        Effect.gen(function* () {
+          yield* Effect.promise(() =>
+            Bun.write(
+              path.join(dir, ".opencode", "skill", "orch-skill", "SKILL.md"),
+              `---
+name: orch-skill
+description: A skill with orchestration.
+metadata:
+  orchestration:
+    category: implementation
+    priority: 75
+    scope: project
+    triggers:
+      task_types: ["code-generation"]
+      file_patterns: ["*.kt"]
+---
+
+# Orch Skill
+`,
+            ),
+          )
+
+          const skill = yield* Skill.Service
+          const item = yield* skill.get("orch-skill")
+          expect(item).toBeDefined()
+          expect(item!.orchestration?.category).toBe("implementation")
+          expect(item!.orchestration?.priority).toBe(75)
+          expect(item!.orchestration?.scope).toBe("project")
+          expect(item!.orchestration?.triggers?.task_types).toEqual(["code-generation"])
+          expect(item!.orchestration?.triggers?.file_patterns).toEqual(["*.kt"])
+        }),
+      { git: true },
+    ),
+  )
+
+  it.live("always selects bootstrap skills even when the task does not match", () =>
+    provideTmpdirInstance(
+      (dir) =>
+        Effect.gen(function* () {
+          // android-core is a bootstrap skill; give it Android-only triggers so it
+          // scores 0 against a documentation task, then confirm it is still selected.
+          yield* Effect.promise(() =>
+            Bun.write(
+              path.join(dir, ".agents", "skills", "android-core", "SKILL.md"),
+              `---
+name: android-core
+description: Bootstrap Android awareness.
+metadata:
+  orchestration:
+    triggers:
+      task_types: ["code-generation"]
+    priority: 10
+---
+
+# Android Core
+`,
+            ),
+          )
+
+          const skill = yield* Skill.Service
+          const result = yield* skill.analyzeAndSelect(undefined, "write documentation for the readme", [])
+          expect(result.selected.map((s) => s.name)).toContain("android-core")
+          const score = result.scores.find((s) => s.skill.name === "android-core")
+          expect(score?.reasons).toContain("bootstrap")
+        }),
+      { git: true },
+    ),
+  )
 })
 
 describe("auto-install google skills", () => {

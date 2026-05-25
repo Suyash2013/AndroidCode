@@ -10,6 +10,9 @@ export const Info = Schema.Struct({
   auto_install_google_skills: Schema.optional(Schema.Boolean).annotate({
     description: "Automatically install Google's official Android skills on first use",
   }),
+  max_active_skills: Schema.optional(Schema.Number).annotate({
+    description: "Maximum number of skills to include in the system prompt per turn (default: 5)",
+  }),
 })
 
 export type Info = Schema.Schema.Type<typeof Info>
