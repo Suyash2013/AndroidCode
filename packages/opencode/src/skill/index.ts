@@ -1,4 +1,5 @@
 import path from "path"
+import * as fs from "fs"
 import { pathToFileURL } from "url"
 import { Effect, Layer, Context, Schema } from "effect"
 import { NamedError } from "@opencode-ai/core/util/error"
@@ -18,13 +19,14 @@ import { OrchestrationSchema } from "./orchestration"
 import { Info } from "./types"
 import type { ScoredSkill } from "./types"
 import { select as routerSelect } from "./router"
-import { analyze } from "./task-analyzer"
+import { analyze, applyClassifier, type TaskClassifier } from "./task-analyzer"
 import CUSTOMIZE_OPENCODE_SKILL_BODY from "./prompt/customize-opencode.md" with { type: "text" }
 import { isRecord } from "@/util/record"
 
 const log = Log.create({ service: "skill" })
 const CLAUDE_EXTERNAL_DIR = ".claude"
 const AGENTS_EXTERNAL_DIR = ".agents"
+const SKILLS_EXTERNAL_DIR = ".skills"
 const EXTERNAL_SKILL_PATTERN = "skills/**/SKILL.md"
 const OPENCODE_SKILL_PATTERN = "{skill,skills}/**/SKILL.md"
 const SKILL_PATTERN = "**/SKILL.md"
@@ -38,6 +40,26 @@ const SKILL_PATTERN = "**/SKILL.md"
 // system prompt regardless of the router's task-relevance scoring. They give
 // the agent baseline awareness of the skill system and Android conventions.
 const BOOTSTRAP_SKILL_NAMES = ["skill-router", "android-core", "skill-guide"]
+
+// Stage 3 enrichment bounds: only a handful of recently-touched files are read,
+// each capped, so per-turn skill routing stays cheap.
+const MAX_ENRICH_FILES = 10
+const MAX_ENRICH_BYTES = 64 * 1024
+
+// Best-effort read of recent file contents for import/API extraction. Unreadable
+// or relative paths are silently skipped — enrichment is purely additive signal.
+function readRecentFileContents(files: string[]): Map<string, string> {
+  const contents = new Map<string, string>()
+  for (const file of files.slice(0, MAX_ENRICH_FILES)) {
+    try {
+      const buf = fs.readFileSync(file)
+      contents.set(file, buf.toString("utf-8", 0, Math.min(buf.length, MAX_ENRICH_BYTES)))
+    } catch {
+      continue
+    }
+  }
+  return contents
+}
 
 const CUSTOMIZE_OPENCODE_SKILL_NAME = "customize-opencode"
 const CUSTOMIZE_OPENCODE_SKILL_DESCRIPTION =
@@ -103,6 +125,8 @@ export interface Interface {
     agent: Agent.Info | undefined,
     lastUserMessage: string,
     recentFiles: string[],
+    recentTools?: string[],
+    classify?: TaskClassifier,
   ) => Effect.Effect<{ selected: Info[]; scores: ScoredSkill[] }>
   readonly selected: (agent?: Agent.Info) => Effect.Effect<Info[]>
   readonly addOverride: (name: string) => Effect.Effect<void>
@@ -221,6 +245,22 @@ const discoverSkills = Effect.fnUntraced(function* (
     for (const root of upDirs) {
       yield* scan(state, root, EXTERNAL_SKILL_PATTERN, { dot: true, scope: "project" })
     }
+
+    // `.skills/` is itself the skills root (skills live at `.skills/<name>/SKILL.md`),
+    // so it is scanned with the bare SKILL pattern rather than the nested `skills/**`
+    // one used for `.claude`/`.agents`.
+    const skillsRootGlobal = path.join(global.home, SKILLS_EXTERNAL_DIR)
+    if (yield* fsys.isDir(skillsRootGlobal)) {
+      yield* scan(state, skillsRootGlobal, SKILL_PATTERN, { dot: true, scope: "global" })
+    }
+
+    const skillsUpDirs = yield* fsys
+      .up({ targets: [SKILLS_EXTERNAL_DIR], start: directory, stop: worktree })
+      .pipe(Effect.catch(() => Effect.succeed([] as string[])))
+
+    for (const root of skillsUpDirs) {
+      yield* scan(state, root, SKILL_PATTERN, { dot: true, scope: "project" })
+    }
   }
 
   const configDirs = yield* config.directories()
@@ -332,6 +372,8 @@ export const layer = Layer.effect(
       agent: Agent.Info | undefined,
       lastUserMessage: string,
       recentFiles: string[],
+      recentTools: string[] = [],
+      classify?: TaskClassifier,
     ) {
       const s = yield* InstanceState.get(state)
       const cfg = yield* config.get()
@@ -343,7 +385,9 @@ export const layer = Layer.effect(
           )
         : Object.values(s.skills)
 
-      const analysis = analyze(lastUserMessage, recentFiles)
+      const fileContents = readRecentFileContents(recentFiles)
+      const base = analyze(lastUserMessage, recentFiles, recentTools, fileContents)
+      const analysis = yield* applyClassifier(base, classify)
       const result = routerSelect(
         availableList,
         analysis,

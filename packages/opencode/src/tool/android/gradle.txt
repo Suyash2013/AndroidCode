@@ -1,0 +1,1 @@
+Run Gradle tasks (assemble, test, lint, etc.) with intelligent output parsing. Prefers the Gradle wrapper (`./gradlew`) when available, falling back to system `gradle`. Always returns structured output with build status, errors, and actionable diagnostics.

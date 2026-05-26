@@ -1037,6 +1037,54 @@ export function Session() {
         dialog.clear()
       }),
     },
+    {
+      title: "List active skills",
+      value: "skills.list",
+      category: "Skills",
+      slash: {
+        name: "skills",
+      },
+      run: () => {
+        prompt?.set({ input: "/skills", parts: [] })
+        dialog.clear()
+      },
+    },
+    {
+      title: "Add skill override",
+      value: "skills.add",
+      category: "Skills",
+      slash: {
+        name: "skills add",
+      },
+      run: () => {
+        prompt?.set({ input: "/skills add ", parts: [] })
+        dialog.clear()
+      },
+    },
+    {
+      title: "Remove skill override",
+      value: "skills.remove",
+      category: "Skills",
+      slash: {
+        name: "skills remove",
+      },
+      run: () => {
+        prompt?.set({ input: "/skills remove ", parts: [] })
+        dialog.clear()
+      },
+    },
+    {
+      title: "Reset skill overrides",
+      value: "skills.reset",
+      category: "Skills",
+      slash: {
+        name: "skills reset",
+      },
+      run: () => {
+        prompt?.set({ input: "/skills reset", parts: [] })
+        dialog.clear()
+      },
+    },
   ])
 
   const sessionCommands = createMemo(() =>

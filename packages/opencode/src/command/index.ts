@@ -110,6 +110,33 @@ export const layer = Layer.effect(
         },
         hints: ["$ARGUMENTS"],
       }
+      commands[SkillsCommand.ADD] = {
+        name: SkillsCommand.ADD,
+        description: "Force-load a skill for this session. Usage: /skills add <name>",
+        source: "command",
+        get template() {
+          return "__SKILLS__"
+        },
+        hints: ["$ARGUMENTS"],
+      }
+      commands[SkillsCommand.REMOVE] = {
+        name: SkillsCommand.REMOVE,
+        description: "Force-exclude a skill for this session. Usage: /skills remove <name>",
+        source: "command",
+        get template() {
+          return "__SKILLS__"
+        },
+        hints: ["$ARGUMENTS"],
+      }
+      commands[SkillsCommand.RESET] = {
+        name: SkillsCommand.RESET,
+        description: "Clear all skill overrides, return to router control. Usage: /skills reset",
+        source: "command",
+        get template() {
+          return "__SKILLS__"
+        },
+        hints: ["$ARGUMENTS"],
+      }
 
       for (const [name, command] of Object.entries(cfg.command ?? {})) {
         commands[name] = {

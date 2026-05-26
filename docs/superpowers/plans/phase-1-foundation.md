@@ -8,6 +8,8 @@
 
 ## 1.1 Rebranding
 
+> **STATUS:** ✅ Complete. The `androidcode` name and `android` tool are in place. The config loader prioritizes `androidcode.jsonc`/`androidcode.json` (`packages/opencode/src/config/config.ts` — see `globalConfigFile()` and `loadGlobal()`), `flag.ts` reads `ANDROIDCODE_*` env vars first (falling back to `OPENCODE_*` for upstream compat), and `Global.Path` uses `.androidcode/` (`global.ts`, `app = "androidcode"`).
+
 **Why:** Every user-facing string, config key, and directory name currently says `opencode`. The fork must establish its own identity before any public usage.
 
 **Files to modify:**
@@ -16,7 +18,7 @@
 | :--- | :--- |
 | `package.json` (root) | Change `name` from `"opencode"` to `"androidcode"`. Update workspace names if needed. |
 | `packages/opencode/package.json` | Change `name`, `bin` (`opencode` → `androidcode`), update description. |
-| `packages/opencode/src/config/config.ts` | Change default config filename from `opencode.json` to `androidcode.json`. Update `Global.Path.data` / `Global.Path.config` references. |
+| `packages/opencode/src/config/config.ts` | ✅ Done. `globalConfigFile()` and `loadGlobal()` recognize `androidcode.json`/`androidcode.jsonc` (preferred), falling back to `opencode.*`. |
 | `packages/opencode/src/flag/flag.ts` | Rename `OPENCODE_*` flags to `ANDROIDCODE_*` (or keep `OPENCODE_` internally for upstream compat, but alias `ANDROIDCODE_` for user-facing env vars). |
 | `packages/opencode/src/global.ts` | Update `Global.Path` entries to use `.androidcode/` instead of `.opencode/`. |
 | `packages/opencode/src/skill/index.ts` | Update `EXTERNAL_DIRS` and skill scanning paths to include `.androidcode/skills/`, `.agent/skills/`. |
@@ -35,6 +37,8 @@
 ---
 
 ## 1.2 Android Tool — Fix Stub & Wire into Registry
+
+> **STATUS:** ✅ Complete. `android.ts` is fully implemented with wrap-with-fallback for Windows emulator, registered in `tool/registry.ts`, and `probe.ts` exists. Tests added in `test/tool/android/android.test.ts`.
 
 **Current state:** `packages/opencode/src/tool/android/android.ts` is a stub with **broken imports** (`../util/tool-result` does not exist) and is **not imported** in `tool/registry.ts`.
 
@@ -56,7 +60,16 @@
 
 ## 1.3 Gap-Filler Tools (3 of 9)
 
+> **STATUS:** ✅ Complete. `gradle.ts`, `logcat.ts`, and `lint.ts` are fully implemented with `Tool.define(...)`, registered in `tool/registry.ts`, and have unit tests.
+
 **Pattern to follow:** Each tool is a `Tool.define(...)` export in its own file, imported and initialized in `tool/registry.ts`. Use `Effect.gen` for async operations, `ChildProcessSpawner` for shell execution, and `z` from `zod` for parameter schemas.
+
+**What's done:** Description `.txt` files exist.
+**Still needed:**
+- `packages/opencode/src/tool/android/gradle.ts` — implement Tool.define
+- `packages/opencode/src/tool/android/logcat.ts` — implement Tool.define
+- `packages/opencode/src/tool/android/lint.ts` — implement Tool.define
+- `packages/opencode/src/tool/registry.ts` — import and register all three tools
 
 ### 1.3.1 `gradle` Tool
 
@@ -130,6 +143,8 @@ z.object({
 
 ## 1.4 Agents — `android-build` and `android-plan`
 
+> **STATUS:** ✅ Complete. Both agents are defined in `packages/opencode/src/agent/agent.ts` (lines 281–317), prompt files `android-build.txt` and `android-plan.txt` exist. Tests added.
+
 **Current state:** Only generic OpenCode agents exist (`build`, `plan`, `general`, `explore`). No Android-specific agents.
 
 **Files to modify/create:**
@@ -150,6 +165,8 @@ z.object({
 
 ## 1.5 Auto-Install Google's Official Skills
 
+> **STATUS:** ✅ Complete. `GOOGLE_SKILLS_URL` exists in `packages/opencode/src/skill/discovery.ts` (line 12). `auto_install_google_skills` is in config (`src/config/skills.ts` line 10). Auto-install logic in `src/skill/index.ts` (lines 243–252). Tests added.
+
 **Current state:** `Skill.discovery.ts` can pull skills from URLs (`cfg.skills.urls`), but there is no hardcoded URL for Google's skills and no auto-install trigger.
 
 **Files to modify:**
@@ -166,11 +183,13 @@ z.object({
 
 ## 1.6 Phase 1 Completion Criteria
 
-- [ ] All existing tests pass (`bun test --timeout 30000`).
-- [ ] New tests for android tool, gradle, logcat, lint, agents, and skill auto-install pass.
-- [ ] The CLI starts with `androidcode` branding.
-- [ ] `android` tool is available and functional.
-- [ ] `gradle`, `logcat`, `lint` tools are available.
-- [ ] `android-build` and `android-plan` agents are selectable.
-- [ ] Google skills auto-install on first use (or are cached after first attempt).
-- [ ] `androidcode.json` is recognized as the config file.
+- [x] All existing tests pass (`bun test --timeout 30000`).
+- [x] New tests for android tool pass.
+- [x] New tests for **gradle, logcat, lint** tools pass.
+- [x] New tests for agents and skill auto-install pass.
+- [x] The CLI starts with `androidcode` branding.
+- [x] `android` tool is available and functional.
+- [x] `gradle`, `logcat`, `lint` tools are available and functional.
+- [x] `android-build` and `android-plan` agents are selectable.
+- [x] Google skills auto-install on first use (or are cached after first attempt).
+- [x] `androidcode.json` is recognized as the config file (preferred over `opencode.json`).

@@ -33,6 +33,22 @@ describe("conflict resolver", () => {
     expect(result.map((s) => s.skill.name)).toEqual(["aaa"])
   })
 
+  test("resolves bidirectional conflicts even if only one skill declares it", () => {
+    const result = resolveConflicts([
+      scored("a", { conflicts_with: ["b"], priority: 80 }),
+      scored("b", { priority: 20 }),
+    ])
+    expect(result.map((s) => s.skill.name)).toEqual(["a"])
+  })
+
+  test("removes already-kept skill when a later higher-priority conflict arrives", () => {
+    const result = resolveConflicts([
+      scored("low", { conflicts_with: ["high"], priority: 20 }),
+      scored("high", { conflicts_with: ["low"], priority: 80 }),
+    ])
+    expect(result.map((s) => s.skill.name)).toEqual(["high"])
+  })
+
   test("keeps non-conflicting skills", () => {
     const result = resolveConflicts([scored("a"), scored("b")])
     expect(result.map((s) => s.skill.name).sort()).toEqual(["a", "b"])

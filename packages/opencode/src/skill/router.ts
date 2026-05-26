@@ -27,7 +27,7 @@ function scoreSkill(skill: Info, analysis: Analysis): ScoredSkill {
   if (triggers?.content_patterns) {
     for (const pattern of triggers.content_patterns) {
       const regex = new RegExp(pattern, "i")
-      if (regex.test(analysis.taskType) || analysis.contentPatterns.some((cp) => regex.test(cp))) {
+      if (regex.test(analysis.message) || analysis.contentPatterns.some((cp) => regex.test(cp))) {
         score += 25
         reasons.push(`content_pattern: ${pattern}`)
       }
@@ -43,7 +43,7 @@ function scoreSkill(skill: Info, analysis: Analysis): ScoredSkill {
 
   if (triggers?.tools_in_use) {
     for (const tool of triggers.tools_in_use) {
-      if (analysis.contentPatterns.some((cp) => cp.includes(tool))) {
+      if (analysis.toolsInUse.includes(tool)) {
         score += 15
         reasons.push(`tool: ${tool}`)
       }
@@ -104,12 +104,17 @@ export function select(
     }
   }
 
-  // Sort by score desc, then priority desc, then scope breadth (session > project > module > file), then name asc
+  // Sort by score desc, then priority desc, then category order, then scope
+  // breadth (session > project > module > file), then name asc
+  const categoryOrder: Record<string, number> = { process: 0, implementation: 1, analysis: 2, tooling: 3 }
   const sorted = resolved.toSorted((a, b) => {
     if (b.score !== a.score) return b.score - a.score
     const aPriority = a.skill.orchestration?.priority ?? 50
     const bPriority = b.skill.orchestration?.priority ?? 50
     if (bPriority !== aPriority) return bPriority - aPriority
+    const aCat = categoryOrder[a.skill.orchestration?.category ?? ""] ?? 99
+    const bCat = categoryOrder[b.skill.orchestration?.category ?? ""] ?? 99
+    if (aCat !== bCat) return aCat - bCat
     const scopeOrder = { file: 0, module: 1, project: 2, session: 3 }
     const aScope = scopeOrder[a.skill.orchestration?.scope ?? "session"]
     const bScope = scopeOrder[b.skill.orchestration?.scope ?? "session"]

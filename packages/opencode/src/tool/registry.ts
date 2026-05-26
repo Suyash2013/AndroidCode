@@ -31,6 +31,9 @@ import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
 import { AndroidTool } from "./android/android"
+import { GradleTool } from "./android/gradle"
+import { LogcatTool } from "./android/logcat"
+import { LintTool } from "./android/lint"
 import * as AndroidProbe from "./android/probe"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
@@ -139,6 +142,9 @@ export const layer: Layer.Layer<
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
     const androidtool = yield* AndroidTool
+    const gradletool = yield* GradleTool
+    const logcattool = yield* LogcatTool
+    const linttool = yield* LintTool
     const skilltool = yield* SkillTool
     const agent = yield* Agent.Service
 
@@ -248,6 +254,9 @@ export const layer: Layer.Layer<
           skill: Tool.init(skilltool),
           patch: Tool.init(patchtool),
           android: Tool.init(androidtool),
+          gradle: Tool.init(gradletool),
+          logcat: Tool.init(logcattool),
+          lint: Tool.init(linttool),
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
@@ -273,6 +282,9 @@ export const layer: Layer.Layer<
             tool.skill,
             tool.patch,
             tool.android,
+            tool.gradle,
+            tool.logcat,
+            tool.lint,
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
           ],
@@ -405,7 +417,7 @@ export const defaultLayer = Layer.suspend(() =>
       Layer.provide(Ripgrep.defaultLayer),
       Layer.provide(Truncate.defaultLayer),
     )
-    .pipe(Layer.provide(RuntimeFlags.defaultLayer)),
+    .pipe(Layer.provide(RuntimeFlags.defaultLayer), Layer.provide(AndroidProbe.layer)),
 )
 
 function isZodType(value: unknown): value is z.ZodType {

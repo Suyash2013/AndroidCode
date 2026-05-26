@@ -1,0 +1,1 @@
+Run Android Lint on a module or the entire project and return structured results. Parses XML/HTML reports to extract severity, message, location, and quick-fix suggestions.

@@ -27,6 +27,7 @@ import { FetchHttpClient } from "effect/unstable/http"
 import { Format } from "@/format"
 import { Ripgrep } from "@/file/ripgrep"
 import * as Truncate from "@/tool/truncate"
+import * as AndroidProbe from "@/tool/android/probe"
 import { InstanceState } from "@/effect/instance-state"
 import { Reference } from "@/reference/reference"
 import { RepositoryCache } from "@/reference/repository-cache"
@@ -69,7 +70,7 @@ const registryLayer = (opts: RegistryLayerOptions = {}) =>
       Layer.provide(Ripgrep.defaultLayer),
       Layer.provide(Truncate.defaultLayer),
     )
-    .pipe(Layer.provide(RuntimeFlags.layer(opts.flags ?? {})))
+    .pipe(Layer.provide(RuntimeFlags.layer(opts.flags ?? {})), Layer.provide(AndroidProbe.layer))
 
 // Fake Plugin.Service that returns a single plugin whose `tool` map contains
 // one definition with `args: undefined`. Used to exercise the plugin entry

@@ -7,10 +7,10 @@ const skills = [
   { name: "build", description: "build", location: "/tmp/build", content: "# build", orchestration: { triggers: { task_types: ["code-generation"] }, priority: 50 } },
 ]
 
-const r1 = select(skills, { taskType: "debugging", confidence: 0.9, filePatterns: [], contentPatterns: [] }, 5)
+const r1 = select(skills, { taskType: "debugging", confidence: 0.9, message: "", filePatterns: [], contentPatterns: [], toolsInUse: [] }, 5)
 console.log("Router test 1:", r1.selected.length === 1 && r1.selected[0].name === "debug" ? "PASS" : "FAIL")
 
-const r2 = select(skills, { taskType: "debugging", confidence: 0.9, filePatterns: [], contentPatterns: [] }, 5, { include: ["build"], exclude: [] })
+const r2 = select(skills, { taskType: "debugging", confidence: 0.9, message: "", filePatterns: [], contentPatterns: [], toolsInUse: [] }, 5, { include: ["build"], exclude: [] })
 console.log("Router test 2:", r2.selected.map(s => s.name).includes("build") ? "PASS" : "FAIL")
 
 // Quick validation of task analyzer

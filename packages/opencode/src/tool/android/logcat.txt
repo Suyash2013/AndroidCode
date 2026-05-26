@@ -1,0 +1,1 @@
+Stream and filter Android logcat output by package name, log level, or time window. Returns structured log entries with PID tracking and severity classification.

@@ -2,8 +2,8 @@ import { describe, expect, test } from "bun:test"
 import { Effect, Layer, Context } from "effect"
 import { AndroidTool } from "../../../src/tool/android/android"
 import { Service as AndroidProbeService, type AndroidProbeResult } from "../../../src/tool/android/probe"
-import * as CrossSpawnSpawner from "../../../src/effect/cross-spawn-spawner"
-import { Truncate } from "../../../src/tool"
+import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
+import { Truncate } from "../../../src/tool/truncate"
 import { Agent } from "../../../src/agent/agent"
 
 function makeProbeLayer(result: AndroidProbeResult) {
@@ -25,6 +25,7 @@ const mockAgentLayer = Layer.succeed(
   Agent.Service.of({
     get: () => Effect.succeed({ name: "build", mode: "primary", permission: [], options: {} } as any),
     list: () => Effect.succeed([]),
+    defaultInfo: () => Effect.succeed({ name: "build", mode: "primary", permission: [], options: {} } as any),
     defaultAgent: () => Effect.succeed("build"),
     generate: () => Effect.die("not implemented"),
   }),

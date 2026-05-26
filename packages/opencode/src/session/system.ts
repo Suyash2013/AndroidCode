@@ -16,6 +16,14 @@ import type { Provider } from "@/provider/provider"
 import type { Agent } from "@/agent/agent"
 import { Permission } from "@/permission"
 import { Skill } from "@/skill"
+import type { TaskClassifier } from "@/skill/task-analyzer"
+
+type SkillTurnContext = {
+  lastUserMessage?: string
+  recentFiles?: string[]
+  recentTools?: string[]
+  classify?: TaskClassifier
+}
 
 export function provider(model: Provider.Model) {
   if (model.api.id.includes("gpt-4") || model.api.id.includes("o1") || model.api.id.includes("o3"))
@@ -35,7 +43,7 @@ export function provider(model: Provider.Model) {
 
 export interface Interface {
   readonly environment: (model: Provider.Model) => Effect.Effect<string[]>
-  readonly skills: (agent: Agent.Info, turnContext?: { lastUserMessage?: string; recentFiles?: string[] }) => Effect.Effect<string | undefined>
+  readonly skills: (agent: Agent.Info, turnContext?: SkillTurnContext) => Effect.Effect<string | undefined>
 }
 
 export class Service extends Context.Service<Service, Interface>()("@opencode/SystemPrompt") {}
@@ -75,11 +83,17 @@ export const layer = Layer.effect(
         return parts
       }),
 
-      skills: Effect.fn("SystemPrompt.skills")(function* (agent: Agent.Info, turnContext?: { lastUserMessage?: string; recentFiles?: string[] }) {
+      skills: Effect.fn("SystemPrompt.skills")(function* (agent: Agent.Info, turnContext?: SkillTurnContext) {
         if (Permission.disabled(["skill"], agent.permission).has("skill")) return
 
         if (turnContext?.lastUserMessage) {
-          yield* skill.analyzeAndSelect(agent, turnContext.lastUserMessage, turnContext.recentFiles ?? [])
+          yield* skill.analyzeAndSelect(
+            agent,
+            turnContext.lastUserMessage,
+            turnContext.recentFiles ?? [],
+            turnContext.recentTools ?? [],
+            turnContext.classify,
+          )
         }
 
         const list = yield* skill.selected(agent)

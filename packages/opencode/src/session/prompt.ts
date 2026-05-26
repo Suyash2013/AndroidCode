@@ -8,7 +8,7 @@ import * as Session from "./session"
 import { Agent } from "../agent/agent"
 import { Provider } from "@/provider/provider"
 import { ModelID, ProviderID } from "../provider/schema"
-import { type Tool as AITool, tool, jsonSchema } from "ai"
+import { type Tool as AITool, tool, jsonSchema, generateText } from "ai"
 import type { JSONSchema7 } from "@ai-sdk/provider"
 import { SessionCompaction } from "./compaction"
 import { Bus } from "../bus"
@@ -1433,8 +1433,48 @@ export const layer = Layer.effect(
               }
             }
 
+            // Distinct tools used so far this conversation, so skills with a
+            // `tools_in_use` trigger can activate based on real tool history.
+            const recentTools: string[] = []
+            const seenTools = new Set<string>()
+            for (const m of msgs) {
+              for (const p of m.parts) {
+                if (p.type === "tool" && typeof (p as { tool?: unknown }).tool === "string") {
+                  const name = (p as { tool: string }).tool
+                  if (!seenTools.has(name)) {
+                    seenTools.add(name)
+                    recentTools.push(name)
+                  }
+                }
+              }
+            }
+
+            // Stage 2 task classifier for skill routing: consulted only when the
+            // keyword classifier is under-confident. Built here because the model
+            // and provider are in scope; any failure falls back to keyword routing.
+            const classifyTask = (message: string, candidates: readonly string[]) =>
+              Effect.gen(function* () {
+                const small = yield* provider.getSmallModel(model.providerID)
+                if (!small) return undefined
+                const language = yield* provider.getLanguage(small)
+                const { text } = yield* Effect.tryPromise(() =>
+                  generateText({
+                    model: language,
+                    prompt:
+                      "You are a task classifier. Choose the single best label for the developer request below.\n" +
+                      `Allowed labels: ${candidates.join(", ")}\n` +
+                      "Reply with ONLY the label, nothing else.\n\n" +
+                      `Request: ${message}`,
+                  }),
+                )
+                return text
+              }).pipe(Effect.catchCause(() => Effect.succeed(undefined)))
+
             const [skills, env, instructions, modelMsgs] = yield* Effect.all([
-              sys.skills(agent, lastUserMessage ? { lastUserMessage, recentFiles } : undefined),
+              sys.skills(
+                agent,
+                lastUserMessage ? { lastUserMessage, recentFiles, recentTools, classify: classifyTask } : undefined,
+              ),
               sys.environment(model),
               instruction.system().pipe(Effect.orDie),
               MessageV2.toModelMessagesEffect(msgs, model),
