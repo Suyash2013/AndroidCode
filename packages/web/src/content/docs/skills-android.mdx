@@ -1,0 +1,63 @@
+---
+title: Android Skills
+description: Android-specific skill reference and authoring guide.
+---
+
+AndroidCode ships with 26 specialized Android development skills that are automatically
+selected based on the task at hand. Skills are authored as Markdown files with YAML frontmatter.
+
+## Built-in Skills
+
+| Skill | Category |
+| :--- | :--- |
+| `android-accessibility` | TalkBack, content descriptions, contrast ratios |
+| `android-architecture` | MVVM, MVI, Clean Architecture |
+| `android-compose` | Jetpack Compose UI, state, navigation, theming |
+| `android-database` | Room, DataStore, SqlDelight |
+| `android-di` | Hilt, Dagger, Koin |
+| `android-gradle` | Build optimization, version catalogs, convention plugins |
+| `android-kmp` | Kotlin Multiplatform setup and patterns |
+| `android-navigation` | Navigation Component, deep links, backstack |
+| `android-networking` | Retrofit, OkHttp, Ktor |
+| `android-performance` | Memory, layout, startup profiling |
+| `android-permissions` | Runtime permissions, rationale dialogs |
+| `android-security` | Certificate pinning, encrypted preferences, biometrics |
+| `android-testing` | JUnit, Espresso, Compose UI Testing |
+| `android-views` | XML layouts, ViewBinding, RecyclerView |
+| `android-workmanager` | Background work scheduling |
+
+## Authoring a Skill
+
+Create `SKILL.md` in `.androidcode/skills/<your-skill-name>/`:
+
+```markdown
+---
+name: my-custom-skill
+description: What this skill does
+orchestration:
+  task_type: android-component
+  version: 1.0.0
+---
+
+# My Skill
+
+Instructions for the AI agent...
+```
+
+## Skill Orchestration
+
+The `orchestration` frontmatter controls how skills are matched to tasks:
+
+```yaml
+orchestration:
+  task_type: android-component
+  category: compose
+  version: 1.0.0
+```
+
+- `task_type` — "build", "refactor", "test", "debug", or "android-component"
+- `category` — sub-classification (e.g., "compose", "database")
+- `version` — semantic version for conflict resolution
+
+Skills with higher version numbers take precedence. Major version mismatches
+produce a warning at startup.

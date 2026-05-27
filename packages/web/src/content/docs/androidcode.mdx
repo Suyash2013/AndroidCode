@@ -1,0 +1,60 @@
+---
+title: AndroidCode
+description: AI-powered Android development assistant.
+---
+
+import { Tabs, TabItem } from "@astrojs/starlight/components"
+
+AndroidCode is an AI coding assistant purpose-built for Android development. It understands
+Gradle builds, Jetpack Compose, Android SDK tools, and Android project conventions.
+
+## Installation
+
+<Tabs>
+<TabItem label="npm">
+
+```sh
+npm install -g @androidcode/cli
+```
+
+</TabItem>
+<TabItem label="Bun">
+
+```sh
+bun add -g @androidcode/cli
+```
+
+</TabItem>
+</Tabs>
+
+## Quick Start
+
+```sh
+# Start AndroidCode in your project directory
+androidcode
+
+# Or run a single task
+androidcode "Add dark mode support to SettingsActivity"
+```
+
+## Configuration
+
+AndroidCode looks for `.androidcode/androidcode.json` or `.androidcode/androidcode.jsonc`
+in your project root. It also reads from `~/.config/androidcode/androidcode.json`.
+
+```json
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "anthropic/claude-sonnet-4-6",
+  "android": {
+    "sdk_path": "/Users/you/Library/Android/sdk"
+  }
+}
+```
+
+## Android-Specific Features
+
+- **Gradle-aware builds** - understands `build.gradle.kts`, version catalogs, and multi-module projects
+- **Compose first** - Jetpack Compose expertise with Material 3 theming
+- **Android SDK integration** - adb, sdkmanager, emulator awareness
+- **26 specialized skills** - accessibility, architecture, compose, database, di, navigation, permissions, security, testing, and more

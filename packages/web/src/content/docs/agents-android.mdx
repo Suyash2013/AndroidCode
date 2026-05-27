@@ -1,0 +1,42 @@
+---
+title: Android Agents
+description: Android-specific agent configurations.
+---
+
+AndroidCode extends the standard agent system with Android-aware modes.
+
+## Built-in Agents
+
+| Agent | Type | Description |
+| :--- | :--- | :--- |
+| `build` | Primary | General-purpose Android development agent |
+| `plan` | Primary | Architecture and planning agent |
+| `explore` | Subagent | Codebase exploration with Android awareness |
+| `general` | Subagent | Multi-step task execution |
+
+## Configuring Agents
+
+```json
+{
+  "agent": {
+    "build": {
+      "permission": {
+        "android.gradle": "allow",
+        "android.adb": "ask"
+      }
+    }
+  }
+}
+```
+
+## Android-Specific Permissions
+
+These Android-specific tool permissions can be assigned to agents:
+
+| Permission | Controls |
+| :--- | :--- |
+| `android.gradle` | Gradle build execution |
+| `android.adb` | Device/emulator interaction |
+| `android.sdkmanager` | SDK package management |
+| `android.emulator` | Emulator lifecycle |
+| `android.logcat` | Device log access |

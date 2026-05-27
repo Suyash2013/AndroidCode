@@ -1,0 +1,32 @@
+---
+title: Android Tools
+description: Android-specific tools reference.
+---
+
+AndroidCode exposes these Android-specific tools in addition to the standard tool set.
+
+## Android Tools
+
+| Tool | Description |
+| :--- | :--- |
+| `android.gradle` | Execute Gradle tasks with proper caching and error handling |
+| `android.adb` | Run ADB commands against connected devices and emulators |
+| `android.sdkmanager` | Manage Android SDK packages |
+| `android.emulator` | Launch and manage Android emulators |
+| `android.logcat` | Capture and filter Android device logs |
+
+## Tool Hooks
+
+Plugins can register for `android.tool.preExecute` and `android.tool.postExecute` hooks
+to intercept Android tool execution:
+
+```ts
+export default async () => ({
+  "android.tool.preExecute": async (input, output) => {
+    // input.tool, input.args
+  },
+  "android.tool.postExecute": async (input, output) => {
+    // input.tool, input.args, input.exitCode, input.stdout, input.stderr
+  },
+})
+```
