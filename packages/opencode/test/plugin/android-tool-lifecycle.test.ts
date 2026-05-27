@@ -45,163 +45,186 @@ const it = testEffect(
 const preExecuteHook = "android.tool.preExecute"
 const postExecuteHook = "android.tool.postExecute"
 
-function withPlugin(source: string, self: Effect.Effect<unknown, unknown, unknown>) {
-  return provideTmpdirInstance((dir) =>
-    Effect.gen(function* () {
-      const file = path.join(dir, "plugin.ts")
-      yield* Effect.all(
-        [
-          Effect.promise(() => Bun.write(file, source)),
-          Effect.promise(() =>
-            Bun.write(
-              path.join(dir, "opencode.json"),
+function writePlugin(dir: string, name: string, source: string) {
+  return Effect.promise(() => Bun.write(path.join(dir, name), source))
+}
+
+describe("android.tool plugin hooks", () => {
+  const live = it.live as any
+
+  live("preExecute hook fires before tool execution", () =>
+    provideTmpdirInstance((dir) =>
+      Effect.gen(function* () {
+        const file = path.join(dir, "plugin.ts")
+        yield* Effect.all(
+          [
+            writePlugin(dir, "plugin.ts", [
+              "export default async () => ({",
+              `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
+              `    output.output.push("pre:" + input.tool)`,
+              "  },",
+              "})",
+              "",
+            ].join("\n")),
+            writePlugin(
+              dir,
+              "opencode.json",
               JSON.stringify(
-                {
-                  $schema: "https://opencode.ai/config.json",
-                  plugin: [pathToFileURL(file).href],
-                },
+                { $schema: "https://opencode.ai/config.json", plugin: [pathToFileURL(file).href] },
                 null,
                 2,
               ),
             ),
-          ),
-        ],
-        { discard: true, concurrency: 2 },
-      )
-      return yield* self
-    }),
-  )
-}
-
-const triggerHook = Effect.fn("triggerAndroidTool")(function* (
-  hookName: string,
-  input: Record<string, unknown>,
-) {
-  const plugin = yield* Plugin.Service
-  const output: string[] = []
-  yield* plugin.trigger(hookName, input, { output })
-  return output
-})
-
-describe("android.tool plugin hooks", () => {
-  it.live("preExecute hook fires before tool execution", () =>
-    withPlugin(
-      [
-        "export default async () => ({",
-        `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
-        `    output.output.push("pre:" + input.tool)`,
-        "  },",
-        "})",
-        "",
-      ].join("\n"),
-      Effect.gen(function* () {
-        const out = yield* triggerHook(preExecuteHook, { tool: "gradle", args: ["build"] })
-        expect(out).toEqual(["pre:gradle"])
+          ],
+          { discard: true, concurrency: 2 },
+        )
+        const plugin = yield* Plugin.Service
+        const output: string[] = []
+        yield* (plugin.trigger as any)(preExecuteHook, { tool: "gradle", args: ["build"] }, { output })
+        expect(output).toEqual(["pre:gradle"])
       }),
     ),
   )
 
-  it.live("postExecute hook fires after tool execution with result", () =>
-    withPlugin(
-      [
-        "export default async () => ({",
-        `  ${JSON.stringify(postExecuteHook)}: async (input, output) => {`,
-        `    output.output.push("post:" + input.tool + ":" + input.exitCode)`,
-        "  },",
-        "})",
-        "",
-      ].join("\n"),
+  live("postExecute hook fires after tool execution with result", () =>
+    provideTmpdirInstance((dir) =>
       Effect.gen(function* () {
-        const out = yield* triggerHook(postExecuteHook, { tool: "adb", exitCode: 0 })
-        expect(out).toEqual(["post:adb:0"])
+        const file = path.join(dir, "plugin.ts")
+        yield* Effect.all(
+          [
+            writePlugin(dir, "plugin.ts", [
+              "export default async () => ({",
+              `  ${JSON.stringify(postExecuteHook)}: async (input, output) => {`,
+              `    output.output.push("post:" + input.tool + ":" + input.exitCode)`,
+              "  },",
+              "})",
+              "",
+            ].join("\n")),
+            writePlugin(
+              dir,
+              "opencode.json",
+              JSON.stringify(
+                { $schema: "https://opencode.ai/config.json", plugin: [pathToFileURL(file).href] },
+                null,
+                2,
+              ),
+            ),
+          ],
+          { discard: true, concurrency: 2 },
+        )
+        const plugin = yield* Plugin.Service
+        const output: string[] = []
+        yield* (plugin.trigger as any)(postExecuteHook, { tool: "adb", exitCode: 0 }, { output })
+        expect(output).toEqual(["post:adb:0"])
       }),
     ),
   )
 
-  it.live("both hooks fire in sequence for a full tool lifecycle", () =>
-    withPlugin(
-      [
-        "export default async () => ({",
-        `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
-        `    output.output.push("pre:" + input.tool)`,
-        "  },",
-        `  ${JSON.stringify(postExecuteHook)}: async (input, output) => {`,
-        `    output.output.push("post:" + input.tool + ":" + input.exitCode)`,
-        "  },",
-        "})",
-        "",
-      ].join("\n"),
+  live("both hooks fire in sequence for a full tool lifecycle", () =>
+    provideTmpdirInstance((dir) =>
       Effect.gen(function* () {
+        const file = path.join(dir, "plugin.ts")
+        yield* Effect.all(
+          [
+            writePlugin(dir, "plugin.ts", [
+              "export default async () => ({",
+              `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
+              `    output.output.push("pre:" + input.tool)`,
+              "  },",
+              `  ${JSON.stringify(postExecuteHook)}: async (input, output) => {`,
+              `    output.output.push("post:" + input.tool + ":" + input.exitCode)`,
+              "  },",
+              "})",
+              "",
+            ].join("\n")),
+            writePlugin(
+              dir,
+              "opencode.json",
+              JSON.stringify(
+                { $schema: "https://opencode.ai/config.json", plugin: [pathToFileURL(file).href] },
+                null,
+                2,
+              ),
+            ),
+          ],
+          { discard: true, concurrency: 2 },
+        )
         const plugin = yield* Plugin.Service
         const lifecycle: string[] = []
-        yield* plugin.trigger(preExecuteHook, { tool: "sdkmanager" }, { output: lifecycle })
-        yield* plugin.trigger(postExecuteHook, { tool: "sdkmanager", exitCode: 0 }, { output: lifecycle })
+        yield* (plugin.trigger as any)(preExecuteHook, { tool: "sdkmanager" }, { output: lifecycle })
+        yield* (plugin.trigger as any)(postExecuteHook, { tool: "sdkmanager", exitCode: 0 }, { output: lifecycle })
         expect(lifecycle).toEqual(["pre:sdkmanager", "post:sdkmanager:0"])
       }),
     ),
   )
 
-  it.live("plugin without android hooks does not crash when hooks trigger", () =>
-    withPlugin(
-      [
-        "export default async () => ({",
-        `  "experimental.chat.system.transform": (_input, output) => {`,
-        `    output.system.unshift("other")`,
-        "  },",
-        "})",
-        "",
-      ].join("\n"),
+  live("plugin without android hooks does not crash when hooks trigger", () =>
+    provideTmpdirInstance((dir) =>
       Effect.gen(function* () {
-        const out = yield* triggerHook(preExecuteHook, { tool: "gradle" })
-        expect(out).toEqual([])
+        const file = path.join(dir, "plugin.ts")
+        yield* Effect.all(
+          [
+            writePlugin(dir, "plugin.ts", [
+              "export default async () => ({",
+              `  "experimental.chat.system.transform": (_input, output) => {`,
+              `    output.system.unshift("other")`,
+              "  },",
+              "})",
+              "",
+            ].join("\n")),
+            writePlugin(
+              dir,
+              "opencode.json",
+              JSON.stringify(
+                { $schema: "https://opencode.ai/config.json", plugin: [pathToFileURL(file).href] },
+                null,
+                2,
+              ),
+            ),
+          ],
+          { discard: true, concurrency: 2 },
+        )
+        const plugin = yield* Plugin.Service
+        const output: string[] = []
+        yield* (plugin.trigger as any)(preExecuteHook, { tool: "gradle" }, { output })
+        expect(output).toEqual([])
       }),
     ),
   )
 
-  it.live("multiple plugins can register for the same android hook", () =>
+  live("multiple plugins can register for the same android hook", () =>
     provideTmpdirInstance((dir) =>
       Effect.gen(function* () {
         const p1 = path.join(dir, "plugin1.ts")
         const p2 = path.join(dir, "plugin2.ts")
         yield* Effect.all(
           [
-            Effect.promise(() =>
-              Bun.write(
-                p1,
-                [
-                  "export default async () => ({",
-                  `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
-                  `    output.output.push("p1:" + input.tool)`,
-                  "  },",
-                  "})",
-                  "",
-                ].join("\n"),
-              ),
-            ),
-            Effect.promise(() =>
-              Bun.write(
-                p2,
-                [
-                  "export default async () => ({",
-                  `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
-                  `    output.output.push("p2:" + input.tool)`,
-                  "  },",
-                  "})",
-                  "",
-                ].join("\n"),
-              ),
-            ),
-            Effect.promise(() =>
-              Bun.write(
-                path.join(dir, "opencode.json"),
-                JSON.stringify(
-                  {
-                    $schema: "https://opencode.ai/config.json",
-                    plugin: [pathToFileURL(p1).href, pathToFileURL(p2).href],
-                  },
-                  null,
-                  2,
-                ),
+            writePlugin(dir, "plugin1.ts", [
+              "export default async () => ({",
+              `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
+              `    output.output.push("p1:" + input.tool)`,
+              "  },",
+              "})",
+              "",
+            ].join("\n")),
+            writePlugin(dir, "plugin2.ts", [
+              "export default async () => ({",
+              `  ${JSON.stringify(preExecuteHook)}: async (input, output) => {`,
+              `    output.output.push("p2:" + input.tool)`,
+              "  },",
+              "})",
+              "",
+            ].join("\n")),
+            writePlugin(
+              dir,
+              "opencode.json",
+              JSON.stringify(
+                {
+                  $schema: "https://opencode.ai/config.json",
+                  plugin: [pathToFileURL(p1).href, pathToFileURL(p2).href],
+                },
+                null,
+                2,
               ),
             ),
           ],
@@ -209,7 +232,7 @@ describe("android.tool plugin hooks", () => {
         )
         const plugin = yield* Plugin.Service
         const output: string[] = []
-        yield* plugin.trigger(preExecuteHook, { tool: "gradle" }, { output })
+        yield* (plugin.trigger as any)(preExecuteHook, { tool: "gradle" }, { output })
         expect(output.toSorted()).toEqual(["p1:gradle", "p2:gradle"])
       }),
     ),

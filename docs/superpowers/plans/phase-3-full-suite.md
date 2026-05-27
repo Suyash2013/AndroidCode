@@ -6,47 +6,55 @@
 
 ---
 
-## 3.1 Remaining Gap-Filler Tools (6 of 9)
+## 3.1 Gap-Filler Tools (9 of 9)
 
-> **STATUS:** ❌ None implemented.
+> **STATUS:** ✅ All 9 implemented and tested.
 
-| Tool | File | Wrap Policy | Key Complexity | Status |
-| :--- | :--- | :--- | :--- | :--- |
-| `manifest` | `packages/opencode/src/tool/android/manifest.ts` | `raw-only` | XML parsing/modification of `AndroidManifest.xml`. | ❌ Not started |
-| `resources` | `packages/opencode/src/tool/android/resources.ts` | `raw-only` | Navigate `res/` directory, parse resource types. | ❌ Not started |
-| `module-graph` | `packages/opencode/src/tool/android/module-graph.ts` | `raw-only` | Parse Gradle module dependencies. Reuse `android-intelligence.ts`. | ❌ Not started |
-| `apk-analyzer` | `packages/opencode/src/tool/android/apk-analyzer.ts` | `raw-only` | Use `apkanalyzer` CLI or unzip + parse APK contents. | ❌ Not started |
-| `signing` | `packages/opencode/src/tool/android/signing.ts` | `raw-only` | Read signing configs. **Security rule:** Never log keystore passwords. | ❌ Not started |
-| `dependency-catalog` | `packages/opencode/src/tool/android/dependency-catalog.ts` | `raw-only` | Query/manage `libs.versions.toml`. Reuse `parseVersionCatalogFromPath`. Add write capability. | ❌ Not started |
+| Tool | File | Wrap Policy | Status |
+| :--- | :--- | :--- | :--- |
+| `android` | `packages/opencode/src/tool/android/android.ts` | `raw-only` | ✅ Done — wraps Google's official Android CLI |
+| `gradle` | `packages/opencode/src/tool/android/gradle.ts` | `raw-only` | ✅ Done — runs Gradle tasks via shell |
+| `logcat` | `packages/opencode/src/tool/android/logcat.ts` | `raw-only` | ✅ Done — streams `adb logcat` output |
+| `lint` | `packages/opencode/src/tool/android/lint.ts` | `raw-only` | ✅ Done — runs Android Lint, parses XML reports |
+| `manifest` | `packages/opencode/src/tool/android/manifest.ts` | `raw-only` | ✅ Done — parses `AndroidManifest.xml` |
+| `resources` | `packages/opencode/src/tool/android/resources.ts` | `raw-only` | ✅ Done — scans `res/` directories |
+| `module-graph` | `packages/opencode/src/tool/android/module-graph.ts` | `raw-only` | ✅ Done — parses Gradle module deps |
+| `apk-analyzer` | `packages/opencode/src/tool/android/apk-analyzer.ts` | `raw-only` | ✅ Done — wraps `apkanalyzer` CLI |
+| `signing` | `packages/opencode/src/tool/android/signing.ts` | `raw-only` | ✅ Done — inspects signing configs safely |
+| `dependency-catalog` | `packages/opencode/src/tool/android/dependency-catalog.ts` | `raw-only` | ✅ Done — queries and edits `libs.versions.toml` |
 
-**Also note:** Phase 1 tools (`gradle`, `logcat`, `lint`) have description files but **no `.ts` implementations** yet — they are part of the 9 tool total.
+All tools are registered in `registry.ts` and have corresponding `.txt` description files and unit tests in `test/tool/android/`.
 
 ---
 
-## 3.2 Subagents (4 of 4)
+## 3.2 Subagents & Primary Agents (6 of 6)
 
-> **STATUS:** ❌ None implemented.
+> **STATUS:** ✅ All 6 implemented and tested.
 
-**File:** `packages/opencode/src/agent/agent.ts` (extend `agents` record)
+**File:** `packages/opencode/src/agent/agent.ts` (agents record at line ~132)
 
-| Agent | Mode | Model Default | Description | Prompt File | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| `android-debug` | subagent | Sonnet-class | Debugging specialist. | `packages/opencode/src/agent/prompt/android-debug.txt` | ❌ Not started |
-| `android-review` | subagent | Opus-class | Code review with Android best practices. | `packages/opencode/src/agent/prompt/android-review.txt` | ❌ Not started |
-| `android-explore` | subagent | Haiku-class | Fast codebase navigation for Android. | `packages/opencode/src/agent/prompt/android-explore.txt` | ❌ Not started |
-| `android-kmp` | subagent | Sonnet-class | Kotlin Multiplatform specialist. | `packages/opencode/src/agent/prompt/android-kmp.txt` | ❌ Not started |
+| Agent | Mode | Model Default | Prompt File | Status |
+| :--- | :--- | :--- | :--- | :--- |
+| `android-build` | primary | Sonnet-class | `prompt/android-build.txt` | ✅ Done |
+| `android-plan` | primary | Opus-class | `prompt/android-plan.txt` | ✅ Done |
+| `android-debug` | subagent | Sonnet-class | `prompt/android-debug.txt` | ✅ Done |
+| `android-review` | subagent | Opus-class | `prompt/android-review.txt` | ✅ Done |
+| `android-explore` | subagent | Haiku-class | `prompt/android-explore.txt` | ✅ Done |
+| `android-kmp` | subagent | Sonnet-class | `prompt/android-kmp.txt` | ✅ Done |
 
 **Permissions:**
-- `android-debug`: Allow `logcat`, `bash`, `read`, `grep`, `glob`. Deny `write`, `edit`.
-- `android-review`: Deny ALL edit tools. Allow `read`, `grep`, `glob`.
+- `android-debug`: Allows `logcat`, `bash`, `read`, `grep`, `glob`. Denies `write`, `edit`.
+- `android-review`: Denies ALL edit tools. Allows `read`, `grep`, `glob`.
 - `android-explore`: Same as existing `explore` with Android file pattern awareness.
-- `android-kmp`: Allow all read/search tools. Deny edits.
+- `android-kmp`: Allows all read/search tools. Denies edits.
+
+Tests in `test/agent/agent.test.ts` (lines 736–793) verify registration, properties, and permission rules.
 
 ---
 
-## 3.3 Shipped Skills (24 skills)
+## 3.3 Shipped Skills (24+ skills)
 
-> **STATUS:** ✅ All 24 skill skeletons created. They exist in `.agents/skills/` with proper `metadata.orchestration` frontmatter, but tests verifying parse + route are not yet written.
+> **STATUS:** ✅ All skills created, parseable, and routing-correct.
 
 **Directory:** `.agents/skills/` (agentskills.io standard)
 
@@ -64,49 +72,58 @@
 **Tooling Skills (5):**
 - ✅ `android-gradle`, `android-testing`, `android-ci`, `android-release`, `android-proguard`
 
-**Each skill MUST:**
-1. Conform to agentskills.io frontmatter standard. ✅
-2. Include `metadata.orchestration` for AndroidCode routing. ✅
-3. Be ≤20k characters (~5k tokens). ✅ (all are well under)
+**Bootstrap Skills (3):**
+- ✅ `android-core`, `skill-router`, `skill-guide` — always loaded
 
-**Still needed:**
-4. Include a test verifying it parses and routes correctly. ❌ Not started.
+**Each skill:**
+1. Conforms to agentskills.io frontmatter standard. ✅
+2. Includes `metadata.orchestration` for AndroidCode routing. ✅
+3. Is ≤20k characters (~5k tokens). ✅
+4. Test verifying parse + route exists. ✅ (`test/skill/shipped-skills.test.ts`)
 
 ---
 
 ## 3.4 Skill Versioning
 
-> **STATUS:** ⚠ `version` field is parsed in frontmatter (line 37 of `orchestration.ts`) but **not enforced**. No semver validation, no local > cached precedence, no breaking change alerts.
+> **STATUS:** ✅ Fully implemented.
 
-**File:** `packages/opencode/src/skill/index.ts` (extend)
+**File:** `packages/opencode/src/skill/version.ts`
 
-- ✅ Parse `version` from frontmatter (schema includes it).
-- ❌ Local skills (`.androidcode/skills/`) always take precedence over cached URL skills — **not implemented**.
-- ❌ On version conflict, log a warning — **not implemented**.
-- ❌ Breaking change detection: if major version differs, alert the user at session start — **not implemented**.
+- ✅ Parse `version` from orchestration frontmatter (schema includes it).
+- ✅ Local on-disk skills (`.agents/skills/`) always take precedence over cached URL skills.
+- ✅ Version conflicts log a warning; tied versions keep existing entry (scan-order independent).
+- ✅ Breaking change detection: if major version differs, a `Session.Event.Error` is published at session start to alert the user.
+
+**File:** `packages/opencode/src/skill/index.ts` (lines 171–212) — `resolveSkillPrecedence` and `isMajorConflict` integrated into the skill-loading pipeline.
+
+Tests in `test/skill/version.test.ts`.
 
 ---
 
 ## 3.5 Integration Testing
 
-> **STATUS:** ❌ Not started.
+> **STATUS:** ✅ Implemented and passing.
 
-**File:** `packages/opencode/test/integration/android-e2e.test.ts`
+**File:** `packages/opencode/test/integration/android-e2e.test.ts` (223 lines, 12 tests)
 
 **Scenarios:**
-1. Open Android project fixture → verify `android_project_context` is injected. ✅ (context injection works)
-2. Ask "build the app" → verify `android-build` agent, `gradle` tool, `android-gradle` skill. ⚠ (`gradle` tool missing, but other parts work)
-3. Ask "why did the build fail?" → verify `android-debug` subagent, `logcat`/`lint` tools. ❌ (subagent + tools missing)
-4. Ask "review this code" → verify `android-review` subagent, edit tools denied. ❌ (subagent missing)
-5. Switch task mid-conversation → verify skill re-routing occurs. ✅ (Phase 2 implements this)
+1. ✅ Open Android project fixture → verify `android_project_context` is injected.
+2. ✅ Ask "build the app" → verify `android-build` agent, `gradle` tool, `android-gradle` skill are in the active set.
+3. ✅ Ask "why did the build fail?" → verify `android-debug` subagent permissions allow `logcat`/`read`, deny `edit`.
+4. ✅ Ask "review this code" → verify `android-review` subagent denies all editing tools.
+5. ✅ Switch task mid-conversation → verify skill re-routing occurs (performance skill replaces compose patterns).
+
+The test is LLM-free (drives the skill router, agent registry, and project-context generator directly), keeping it deterministic and fast.
 
 ---
 
 ## 3.6 Phase 3 Completion Criteria
 
-- [ ] All 9 gap-filler tools are implemented and tested.
-- [ ] All 5 primary/subagents are implemented and tested.
-- [ ] All 24 skills are written, parse correctly, and include `metadata.orchestration`.
-- [ ] Skill versioning works (local > cached, breaking change alerts).
-- [ ] Integration test suite passes.
-- [ ] `/skills` shows correct active set for each scenario above.
+- [x] All 9 gap-filler tools are implemented and tested.
+- [x] All 6 primary/subagents are implemented and tested.
+- [x] All 24+ skills are written, parse correctly, and include `metadata.orchestration`.
+- [x] Skill versioning works (local > cached, breaking change alerts).
+- [x] Integration test suite passes (12/12).
+- [x] `/skills` shows correct active set for each scenario above.
+
+**Phase 3 is complete.**

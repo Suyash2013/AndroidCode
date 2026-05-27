@@ -1,0 +1,9 @@
+Parse and inspect an Android module's AndroidManifest.xml.
+
+Returns the application package, declared permissions, and the four component
+types (activities, services, receivers, providers), along with which components
+are explicitly exported (android:exported="true").
+
+Use this to audit permissions, find the launcher/main activity, or check which
+components are exposed to other apps. Read-only — it never modifies the manifest.
+Defaults to the app module; pass `module` (e.g. ':feature:login') to target another.

@@ -16,6 +16,7 @@ import { Glob } from "@opencode-ai/core/util/glob"
 import * as Log from "@opencode-ai/core/util/log"
 import { Discovery } from "./discovery"
 import { OrchestrationSchema } from "./orchestration"
+import { isMajorConflict, resolveSkillPrecedence } from "./version"
 import { Info } from "./types"
 import type { ScoredSkill } from "./types"
 import { select as routerSelect } from "./router"
@@ -167,12 +168,37 @@ const add = Effect.fnUntraced(function* (state: State, match: string, bus: Bus.I
       )
     : undefined
 
-  if (state.skills[md.data.name]) {
-    log.warn("duplicate skill name", {
-      name: md.data.name,
-      existing: state.skills[md.data.name].location,
-      duplicate: match,
-    })
+  // Local on-disk skills take precedence over cached URL skills; among the same
+  // source the higher version wins. A major-version conflict is surfaced to the
+  // user at session start via the bus (like a load error).
+  const source: "local" | "cached" = match.startsWith(path.join(Global.Path.cache, "skills")) ? "cached" : "local"
+  const version = orchestration?.version
+
+  const existing = state.skills[md.data.name]
+  if (existing) {
+    const existingVersion = existing.orchestration?.version
+    const decision = resolveSkillPrecedence(
+      { source: existing.source, version: existingVersion, isBuiltin: existing.location === "<built-in>" },
+      { source, version },
+    )
+    const winner = decision === "replace" ? match : existing.location
+    if (isMajorConflict(existingVersion, version)) {
+      log.warn("skill major version conflict", {
+        name: md.data.name,
+        existing: existingVersion,
+        incoming: version,
+        kept: winner,
+      })
+      const message =
+        `Skill "${md.data.name}" has conflicting major versions: ` +
+        `${existingVersion} (${existing.source ?? "built-in"}) vs ${version} (${source}). ` +
+        `Using ${winner}. Review for breaking changes.`
+      const { Session } = yield* Effect.promise(() => import("@/session/session"))
+      yield* bus.publish(Session.Event.Error, { error: new NamedError.Unknown({ message }).toObject() })
+    } else {
+      log.warn("duplicate skill name", { name: md.data.name, existing: existing.location, duplicate: match, kept: winner })
+    }
+    if (decision === "keep-existing") return
   }
 
   state.dirs.add(path.dirname(match))
@@ -182,6 +208,7 @@ const add = Effect.fnUntraced(function* (state: State, match: string, bus: Bus.I
     location: match,
     content: md.content,
     orchestration,
+    source,
   }
 })
 

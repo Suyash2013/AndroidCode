@@ -1,0 +1,10 @@
+Analyze a built .apk using the Android SDK's `apkanalyzer` CLI.
+
+Actions:
+- summary (default): package name, versionCode, versionName
+- manifest: print the merged AndroidManifest.xml
+- permissions: list requested permissions
+- filesize: total and per-file download/raw sizes
+
+Requires `apkanalyzer` on PATH (ships with the SDK command-line tools). If it
+is not installed, the tool reports that clearly instead of failing. Read-only.

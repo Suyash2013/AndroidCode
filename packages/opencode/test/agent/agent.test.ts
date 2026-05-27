@@ -748,3 +748,46 @@ it.instance(
       expect(agent?.prompt).toContain("Android development specialist")
     }),
 )
+
+it.instance("android subagents are registered as selectable subagents", () =>
+  Effect.gen(function* () {
+    const names = (yield* load((svc) => svc.list())).map((a) => a.name)
+    for (const name of ["android-debug", "android-review", "android-explore", "android-kmp"]) {
+      expect(names).toContain(name)
+      const agent = yield* load((svc) => svc.get(name))
+      expect(agent?.mode).toBe("subagent")
+      expect(agent?.native).toBe(true)
+    }
+  }),
+)
+
+it.instance("android-debug allows logcat and read tools but denies edits", () =>
+  Effect.gen(function* () {
+    const agent = yield* load((svc) => svc.get("android-debug"))
+    expect(evalPerm(agent, "logcat")).toBe("allow")
+    expect(evalPerm(agent, "read")).toBe("allow")
+    expect(evalPerm(agent, "bash")).toBe("allow")
+    expect(evalPerm(agent, "edit")).toBe("deny")
+    expect(evalPerm(agent, "write")).toBe("deny")
+  }),
+)
+
+it.instance("android-review allows read/grep/glob but denies all edits", () =>
+  Effect.gen(function* () {
+    const agent = yield* load((svc) => svc.get("android-review"))
+    expect(evalPerm(agent, "read")).toBe("allow")
+    expect(evalPerm(agent, "grep")).toBe("allow")
+    expect(evalPerm(agent, "glob")).toBe("allow")
+    expect(evalPerm(agent, "edit")).toBe("deny")
+    expect(evalPerm(agent, "write")).toBe("deny")
+  }),
+)
+
+it.instance("android-kmp denies edits", () =>
+  Effect.gen(function* () {
+    const agent = yield* load((svc) => svc.get("android-kmp"))
+    expect(agent?.description).toContain("Kotlin Multiplatform")
+    expect(evalPerm(agent, "read")).toBe("allow")
+    expect(evalPerm(agent, "edit")).toBe("deny")
+  }),
+)

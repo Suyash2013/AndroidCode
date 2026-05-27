@@ -14,6 +14,10 @@ import PROMPT_SUMMARY from "./prompt/summary.txt"
 import PROMPT_TITLE from "./prompt/title.txt"
 import PROMPT_ANDROID_BUILD from "./prompt/android-build.txt"
 import PROMPT_ANDROID_PLAN from "./prompt/android-plan.txt"
+import PROMPT_ANDROID_DEBUG from "./prompt/android-debug.txt"
+import PROMPT_ANDROID_REVIEW from "./prompt/android-review.txt"
+import PROMPT_ANDROID_EXPLORE from "./prompt/android-explore.txt"
+import PROMPT_ANDROID_KMP from "./prompt/android-kmp.txt"
 import { Permission } from "@/permission"
 import { mergeDeep, pipe, sortBy, values } from "remeda"
 import { Global } from "@opencode-ai/core/global"
@@ -314,6 +318,101 @@ export const layer = Layer.effect(
             native: true,
             prompt: PROMPT_ANDROID_PLAN,
             model: { providerID: ProviderID.anthropic, modelID: "claude-opus-4-7" as ModelID },
+          },
+          "android-debug": {
+            name: "android-debug",
+            description:
+              "Android debugging specialist. Use to diagnose crashes, ANRs, build failures, and runtime issues. Reads logs and code but does not modify files.",
+            options: {},
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                "*": "deny",
+                read: "allow",
+                grep: "allow",
+                glob: "allow",
+                list: "allow",
+                bash: "allow",
+                logcat: "allow",
+                external_directory: readonlyExternalDirectory,
+              }),
+              user,
+            ),
+            mode: "subagent",
+            native: true,
+            prompt: PROMPT_ANDROID_DEBUG,
+            model: { providerID: ProviderID.anthropic, modelID: "claude-sonnet-4-6" as ModelID },
+          },
+          "android-review": {
+            name: "android-review",
+            description:
+              "Android code review specialist. Use to review Kotlin/Android code for correctness, lifecycle, memory, architecture, Compose, and security best practices. Read-only; never edits code.",
+            options: {},
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                "*": "deny",
+                read: "allow",
+                grep: "allow",
+                glob: "allow",
+                list: "allow",
+                external_directory: readonlyExternalDirectory,
+              }),
+              user,
+            ),
+            mode: "subagent",
+            native: true,
+            prompt: PROMPT_ANDROID_REVIEW,
+            model: { providerID: ProviderID.anthropic, modelID: "claude-opus-4-7" as ModelID },
+          },
+          "android-explore": {
+            name: "android-explore",
+            description:
+              "Fast Android codebase navigation. Use to locate files, symbols, and answer how/where questions in Android projects, with awareness of Gradle modules, source sets, resources, and the manifest. Read-only.",
+            options: {},
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                "*": "deny",
+                grep: "allow",
+                glob: "allow",
+                list: "allow",
+                bash: "allow",
+                webfetch: "allow",
+                websearch: "allow",
+                read: "allow",
+                external_directory: readonlyExternalDirectory,
+              }),
+              user,
+            ),
+            mode: "subagent",
+            native: true,
+            prompt: PROMPT_ANDROID_EXPLORE,
+            model: { providerID: ProviderID.anthropic, modelID: "claude-haiku-4-5" as ModelID },
+          },
+          "android-kmp": {
+            name: "android-kmp",
+            description:
+              "Kotlin Multiplatform specialist. Use to analyze KMP source sets, expect/actual declarations, target configuration, and shared dependencies. Read-only; advises but does not edit.",
+            options: {},
+            permission: Permission.merge(
+              defaults,
+              Permission.fromConfig({
+                "*": "deny",
+                read: "allow",
+                grep: "allow",
+                glob: "allow",
+                list: "allow",
+                webfetch: "allow",
+                websearch: "allow",
+                external_directory: readonlyExternalDirectory,
+              }),
+              user,
+            ),
+            mode: "subagent",
+            native: true,
+            prompt: PROMPT_ANDROID_KMP,
+            model: { providerID: ProviderID.anthropic, modelID: "claude-sonnet-4-6" as ModelID },
           },
         }
 

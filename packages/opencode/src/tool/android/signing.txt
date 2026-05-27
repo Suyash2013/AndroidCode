@@ -1,0 +1,10 @@
+Inspect a module's signingConfigs in build.gradle(.kts) — safely.
+
+Reports each signing config's name, whether it sets storeFile/keyAlias/
+storePassword/keyPassword, and flags configs that hardcode a password as a
+string literal (a security smell) versus sourcing it from env vars or a
+gitignored keystore.properties.
+
+SECURITY: this tool NEVER reads, logs, or emits keystore or key password values.
+It only reports presence and whether a value is a hardcoded literal. Read-only.
+Defaults to the app module; pass `module` to target another.

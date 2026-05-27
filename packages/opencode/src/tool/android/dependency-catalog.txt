@@ -1,0 +1,10 @@
+Query and edit the Gradle version catalog (gradle/libs.versions.toml).
+
+Actions:
+- list: show all [versions] entries plus library and plugin key counts
+- get: return a single version by its [versions] key (requires `key`)
+- set: update or insert a [versions] entry (requires `key` and `value`) — this
+  WRITES the file, preserving the rest of its contents
+
+Use `set` to bump a dependency version safely without hand-editing TOML. The
+other actions are read-only.

@@ -34,6 +34,12 @@ import { AndroidTool } from "./android/android"
 import { GradleTool } from "./android/gradle"
 import { LogcatTool } from "./android/logcat"
 import { LintTool } from "./android/lint"
+import { ManifestTool } from "./android/manifest"
+import { ResourcesTool } from "./android/resources"
+import { ModuleGraphTool } from "./android/module-graph"
+import { ApkAnalyzerTool } from "./android/apk-analyzer"
+import { SigningTool } from "./android/signing"
+import { DependencyCatalogTool } from "./android/dependency-catalog"
 import * as AndroidProbe from "./android/probe"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
@@ -145,6 +151,12 @@ export const layer: Layer.Layer<
     const gradletool = yield* GradleTool
     const logcattool = yield* LogcatTool
     const linttool = yield* LintTool
+    const manifesttool = yield* ManifestTool
+    const resourcestool = yield* ResourcesTool
+    const modulegraphtool = yield* ModuleGraphTool
+    const apkanalyzertool = yield* ApkAnalyzerTool
+    const signingtool = yield* SigningTool
+    const dependencycatalogtool = yield* DependencyCatalogTool
     const skilltool = yield* SkillTool
     const agent = yield* Agent.Service
 
@@ -257,6 +269,12 @@ export const layer: Layer.Layer<
           gradle: Tool.init(gradletool),
           logcat: Tool.init(logcattool),
           lint: Tool.init(linttool),
+          manifest: Tool.init(manifesttool),
+          resources: Tool.init(resourcestool),
+          module_graph: Tool.init(modulegraphtool),
+          apk_analyzer: Tool.init(apkanalyzertool),
+          signing: Tool.init(signingtool),
+          dependency_catalog: Tool.init(dependencycatalogtool),
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
@@ -285,6 +303,12 @@ export const layer: Layer.Layer<
             tool.gradle,
             tool.logcat,
             tool.lint,
+            tool.manifest,
+            tool.resources,
+            tool.module_graph,
+            tool.apk_analyzer,
+            tool.signing,
+            tool.dependency_catalog,
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),
           ],

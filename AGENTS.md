@@ -129,7 +129,7 @@ const table = sqliteTable("session", {
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **AndroidCode** (57051 symbols, 91870 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **AndroidCode** (57450 symbols, 92507 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 
@@ -169,20 +169,20 @@ This project is indexed by GitNexus as **AndroidCode** (57051 symbols, 91870 rel
 | Index, status, clean, wiki CLI commands | `.claude/skills/gitnexus/gitnexus-cli/SKILL.md` |
 | Work in the Components area (877 symbols) | `.claude/skills/generated/components/SKILL.md` |
 | Work in the Run area (542 symbols) | `.claude/skills/generated/run/SKILL.md` |
-| Work in the Context area (404 symbols) | `.claude/skills/generated/context/SKILL.md` |
+| Work in the Context area (401 symbols) | `.claude/skills/generated/context/SKILL.md` |
 | Work in the Session area (389 symbols) | `.claude/skills/generated/session/SKILL.md` |
-| Work in the Component area (213 symbols) | `.claude/skills/generated/component/SKILL.md` |
+| Work in the Component area (204 symbols) | `.claude/skills/generated/component/SKILL.md` |
 | Work in the Pages area (176 symbols) | `.claude/skills/generated/pages/SKILL.md` |
-| Work in the Util area (140 symbols) | `.claude/skills/generated/util/SKILL.md` |
+| Work in the Util area (139 symbols) | `.claude/skills/generated/util/SKILL.md` |
 | Work in the System area (116 symbols) | `.claude/skills/generated/system/SKILL.md` |
 | Work in the Plugin area (102 symbols) | `.claude/skills/generated/plugin/SKILL.md` |
 | Work in the Gen area (91 symbols) | `.claude/skills/generated/gen/SKILL.md` |
 | Work in the Server area (88 symbols) | `.claude/skills/generated/server/SKILL.md` |
-| Work in the Cmd area (83 symbols) | `.claude/skills/generated/cmd/SKILL.md` |
+| Work in the Cmd area (79 symbols) | `.claude/skills/generated/cmd/SKILL.md` |
 | Work in the Prompt area (69 symbols) | `.claude/skills/generated/prompt/SKILL.md` |
 | Work in the Composer area (67 symbols) | `.claude/skills/generated/composer/SKILL.md` |
+| Work in the Script area (64 symbols) | `.claude/skills/generated/script/SKILL.md` |
 | Work in the Provider area (63 symbols) | `.claude/skills/generated/provider/SKILL.md` |
-| Work in the Script area (63 symbols) | `.claude/skills/generated/script/SKILL.md` |
 | Work in the Global-sync area (60 symbols) | `.claude/skills/generated/global-sync/SKILL.md` |
 | Work in the Share area (59 symbols) | `.claude/skills/generated/share/SKILL.md` |
 | Work in the Layout area (58 symbols) | `.claude/skills/generated/layout/SKILL.md` |

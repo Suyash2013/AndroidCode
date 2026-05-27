@@ -1,0 +1,9 @@
+Build the inter-module dependency graph of a Gradle/Android project.
+
+Discovers modules from settings.gradle(.kts) and, for each, parses its build
+script for `project(":...")` dependencies across all configurations (implementation,
+api, ksp, etc.) in both Kotlin and Groovy DSL.
+
+Use this to understand module coupling, plan modularization, or trace which
+modules depend on a given one. Read-only. Pass `module` to see just one module's
+direct dependencies.

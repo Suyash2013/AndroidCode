@@ -1,0 +1,9 @@
+Inspect an Android module's res/ directory, grouped by resource type.
+
+Reports each resource type (values, layout, drawable, mipmap, etc.), how many
+config-qualified directories exist for it (e.g. values, values-night, values-v23),
+and how many files each type contains.
+
+Use this to understand a module's resource layout, find localized/qualified
+variants, or check drawable/layout coverage. Read-only. Defaults to the app
+module; pass `module` to target another, or `type` to filter to one resource type.
