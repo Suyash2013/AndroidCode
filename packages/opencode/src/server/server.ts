@@ -36,6 +36,7 @@ type ListenOptions = CorsOptions & {
   hostname: string
   mdns?: boolean
   mdnsDomain?: string
+  lspFraming?: boolean
 }
 type ListenerState = {
   scope: Scope.Scope

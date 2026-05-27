@@ -13,6 +13,9 @@ export const Server = Schema.Struct({
   cors: Schema.optional(Schema.mutable(Schema.Array(Schema.String))).annotate({
     description: "Additional domains to allow for CORS",
   }),
+  lsp_framing: Schema.optional(Schema.Boolean).annotate({
+    description: "Enable JSON-RPC 2.0 framing on the HTTP API and event stream",
+  }),
 }).annotate({ identifier: "ServerConfig" })
 export type Server = Schema.Schema.Type<typeof Server>
 
