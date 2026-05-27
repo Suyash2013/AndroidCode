@@ -270,6 +270,9 @@ export const Info = Schema.Struct({
       }),
     }),
   ),
+  telemetry: Schema.optional(Schema.Boolean).annotate({
+    description: "Enable opt-in telemetry. Never collects code, file paths, prompts, or user messages.",
+  }),
   experimental: Schema.optional(
     Schema.Struct({
       disable_paste_summary: Schema.optional(Schema.Boolean),
