@@ -38,11 +38,10 @@ export const ErrorResponse = Schema.Struct({
 })
 export type ErrorResponse = Schema.Schema.Type<typeof ErrorResponse>
 
-export const Response = Schema.Union([SuccessResponse, ErrorResponse])
-export type Response = Schema.Schema.Type<typeof Response>
+export type Response = SuccessResponse | ErrorResponse
 
 export function success(id: string | number | null, result: unknown): SuccessResponse {
-  return { jsonrpc: "2.0", id, result }
+  return { jsonrpc: "2.0", id, result } as SuccessResponse
 }
 
 export function error(
@@ -51,11 +50,14 @@ export function error(
   message: string,
   data?: unknown,
 ): ErrorResponse {
-  return { jsonrpc: "2.0", id, error: { code, message, ...(data !== undefined ? { data } : {}) } }
+  return { jsonrpc: "2.0", id, error: { code, message, ...(data !== undefined ? { data } : {}) } } as ErrorResponse
 }
 
 export function notification(method: string, params?: unknown): Notification {
-  return { jsonrpc: "2.0", method, ...(params !== undefined ? { params } : {}) }
+  const result: Notification = params !== undefined
+    ? ({ jsonrpc: "2.0", method, params } as unknown as Notification)
+    : ({ jsonrpc: "2.0", method } as unknown as Notification)
+  return result
 }
 
 export * as JsonRpc from "./jsonrpc"
