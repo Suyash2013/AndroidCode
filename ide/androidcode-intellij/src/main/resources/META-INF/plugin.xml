@@ -13,6 +13,7 @@
     <depends>com.intellij.modules.platform</depends>
     <depends>org.jetbrains.plugins.gradle</depends>
     <depends>org.jetbrains.android</depends>
+    <depends>org.jetbrains.kotlin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <!-- AndroidCodeProjectService is registered via the @Service annotation. -->

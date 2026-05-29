@@ -20,6 +20,7 @@ dependencies {
         bundledPlugins(
             "org.jetbrains.plugins.gradle",
             "org.jetbrains.android",
+            "org.jetbrains.kotlin",
             "com.intellij.java",
         )
     }
