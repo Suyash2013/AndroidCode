@@ -1,0 +1,64 @@
+<idea-plugin>
+    <id>com.androidcode.ide</id>
+    <name>AndroidCode</name>
+    <version>0.1.0</version>
+    <vendor>AndroidCode</vendor>
+
+    <description><![CDATA[
+        AndroidCode IDE integration for Android Studio.
+    ]]></description>
+
+    <idea-version since-build="232"/>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>org.jetbrains.plugins.gradle</depends>
+    <depends>org.jetbrains.android</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- AndroidCodeProjectService is registered via the @Service annotation. -->
+
+        <!-- Tool Window -->
+        <toolWindow
+            id="AndroidCode"
+            icon="/icons/androidcode.svg"
+            anchor="right"
+            factoryClass="com.androidcode.ide.AndroidCodeToolWindowFactory"
+        />
+
+        <!-- Gutter icons -->
+        <codeInsight.lineMarkerProvider
+            language="kotlin"
+            implementationClass="com.androidcode.ide.gutter.LifecycleGutterIconProvider"
+        />
+        <codeInsight.lineMarkerProvider
+            language="kotlin"
+            implementationClass="com.androidcode.ide.gutter.ModuleGraphGutterIconProvider"
+        />
+        <codeInsight.lineMarkerProvider
+            language="kotlin"
+            implementationClass="com.androidcode.ide.gutter.ResourceUsageGutterIconProvider"
+        />
+    </extensions>
+
+    <actions>
+        <!-- Editor actions -->
+        <group id="AndroidCode.EditorPopupGroup" text="AndroidCode" popup="true">
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+            <action id="AndroidCode.GenerateComposable"
+                class="com.androidcode.ide.actions.GenerateComposableAction"
+                text="Generate Composable..."
+                description="Generate a @Composable with AndroidCode"/>
+            <action id="AndroidCode.AddPermission"
+                class="com.androidcode.ide.actions.AddPermissionAction"
+                text="Add Permission..."
+                description="Add a uses-permission with AndroidCode"/>
+        </group>
+
+        <action id="AndroidCode.ExplainBuildError"
+            class="com.androidcode.ide.actions.ExplainBuildErrorAction"
+            text="Explain with AndroidCode"
+            description="Explain the selected build error">
+            <add-to-group group-id="ConsoleEditorPopupMenu" anchor="last"/>
+        </action>
+    </actions>
+</idea-plugin>
