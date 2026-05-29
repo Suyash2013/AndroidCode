@@ -20,7 +20,7 @@ const tmpdirEffect = (options: Parameters<typeof tmpdir>[0]) =>
   )
 
 function jsonRpc(directory: string, body: string) {
-  return Effect.promise(() =>
+  return Effect.promise(async () =>
     app().request("/jsonrpc", {
       method: "POST",
       headers: { "x-opencode-directory": directory, "content-type": "application/json" },
