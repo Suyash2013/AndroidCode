@@ -1,5 +1,6 @@
-import { afterEach, describe, expect } from "bun:test"
+import { afterEach, describe, expect, test } from "bun:test"
 import { Server } from "../../src/server/server"
+import { EventPaths } from "../../src/server/routes/instance/httpapi/groups/event"
 import * as Log from "@opencode-ai/core/util/log"
 import { Effect } from "effect"
 import { resetDatabase } from "../fixture/db"
@@ -93,4 +94,40 @@ describe("JSON-RPC compatibility", () => {
       expect(body[1].error.code).toBe(-32601)
     }),
   )
+})
+
+async function readFirstSseFrame(response: Response): Promise<string> {
+  if (!response.body) throw new Error("missing response body")
+  const reader = response.body.getReader()
+  try {
+    const result = await Promise.race([
+      reader.read(),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timed out waiting for event")), 5_000)),
+    ])
+    if (result.done || !result.value) throw new Error("event stream closed")
+    return new TextDecoder().decode(result.value).replace(/^data: /, "").trim()
+  } finally {
+    await reader.cancel()
+  }
+}
+
+describe("JSON-RPC event framing", () => {
+  test("wraps SSE events in a notification envelope when lsp_framing is enabled", async () => {
+    await using tmp = await tmpdir({ git: true, config: { formatter: false, lsp: false, server: { lsp_framing: true } } })
+    const response = await app().request(EventPaths.event, { headers: { "x-opencode-directory": tmp.path } })
+    expect(response.status).toBe(200)
+    const frame = JSON.parse(await readFirstSseFrame(response))
+    expect(frame.jsonrpc).toBe("2.0")
+    expect(frame.method).toBe("event")
+    expect(frame.params).toMatchObject({ type: "server.connected" })
+  })
+
+  test("emits plain SSE events when lsp_framing is disabled", async () => {
+    await using tmp = await tmpdir({ git: true, config: { formatter: false, lsp: false } })
+    const response = await app().request(EventPaths.event, { headers: { "x-opencode-directory": tmp.path } })
+    expect(response.status).toBe(200)
+    const frame = JSON.parse(await readFirstSseFrame(response))
+    expect(frame.jsonrpc).toBeUndefined()
+    expect(frame.type).toBe("server.connected")
+  })
 })

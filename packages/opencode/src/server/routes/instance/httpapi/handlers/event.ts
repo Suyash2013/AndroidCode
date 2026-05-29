@@ -1,4 +1,6 @@
 import { Bus } from "@/bus"
+import { Config } from "@/config/config"
+import { JsonRpc } from "@/server/jsonrpc"
 import * as Log from "@opencode-ai/core/util/log"
 import { Effect } from "effect"
 import * as Stream from "effect/Stream"
@@ -9,16 +11,16 @@ import { EventApi } from "../groups/event"
 
 const log = Log.create({ service: "server" })
 
-function eventData(data: unknown): Sse.Event {
+function eventData(data: unknown, useJsonRpc: boolean): Sse.Event {
   return {
     _tag: "Event",
     event: "message",
     id: undefined,
-    data: JSON.stringify(data),
+    data: JSON.stringify(useJsonRpc ? JsonRpc.notification("event", data) : data),
   }
 }
 
-function eventResponse(bus: Bus.Interface) {
+function eventResponse(bus: Bus.Interface, useJsonRpc: boolean) {
   return Effect.gen(function* () {
     // Subscribe eagerly: the bus subscription is acquired in the request scope
     // at this yield, so any publish from now on is queued for the body-pump
@@ -36,7 +38,7 @@ function eventResponse(bus: Bus.Interface) {
     return HttpServerResponse.stream(
       Stream.make({ id: Bus.createID(), type: "server.connected", properties: {} }).pipe(
         Stream.concat(events.pipe(Stream.merge(heartbeat, { haltStrategy: "left" }))),
-        Stream.map(eventData),
+        Stream.map((data) => eventData(data, useJsonRpc)),
         Stream.pipeThroughChannel(Sse.encode()),
         Stream.encodeText,
         Stream.ensuring(Effect.sync(() => log.info("event disconnected"))),
@@ -59,7 +61,9 @@ export const eventHandlers = HttpApiBuilder.group(EventApi, "event", (handlers) 
     return handlers.handleRaw(
       "subscribe",
       Effect.fn("EventHttpApi.subscribe")(function* () {
-        return yield* eventResponse(bus)
+        const config = yield* Config.Service.use((cfg) => cfg.get())
+        const useJsonRpc = config.server?.lsp_framing ?? false
+        return yield* eventResponse(bus, useJsonRpc)
       }),
     )
   }),
