@@ -2,7 +2,7 @@ import yargs from "yargs"
 import { hideBin } from "yargs/helpers"
 import { RunCommand } from "./cli/cmd/run"
 import { GenerateCommand } from "./cli/cmd/generate"
-import * as Log from "@opencode-ai/core/util/log"
+import * as Log from "@androidcode/core/util/log"
 import { ConsoleCommand } from "./cli/cmd/account"
 import { ProvidersCommand } from "./cli/cmd/providers"
 import { AgentCommand } from "./cli/cmd/agent"
@@ -11,8 +11,8 @@ import { UninstallCommand } from "./cli/cmd/uninstall"
 import { ModelsCommand } from "./cli/cmd/models"
 import { UI } from "./cli/ui"
 import { Installation } from "./installation"
-import { InstallationVersion } from "@opencode-ai/core/installation/version"
-import { NamedError } from "@opencode-ai/core/util/error"
+import { InstallationVersion } from "@androidcode/core/installation/version"
+import { NamedError } from "@androidcode/core/util/error"
 import { FormatError } from "./cli/error"
 import { ServeCommand } from "./cli/cmd/serve"
 import { DebugCommand } from "./cli/cmd/debug"
@@ -32,7 +32,7 @@ import { DbCommand } from "./cli/cmd/db"
 import { errorMessage } from "./util/error"
 import { PluginCommand } from "./cli/cmd/plug"
 import { Heap } from "./cli/heap"
-import { ensureProcessMetadata } from "@opencode-ai/core/util/opencode-process"
+import { ensureProcessMetadata } from "@androidcode/core/util/opencode-process"
 import { isRecord } from "@/util/record"
 
 const processMetadata = ensureProcessMetadata("main")
@@ -53,7 +53,7 @@ const args = hideBin(process.argv)
 
 function show(out: string) {
   const text = out.trimStart()
-  if (!text.startsWith("opencode ")) {
+  if (!text.startsWith("androidcode ")) {
     process.stderr.write(UI.logo() + EOL + EOL)
     process.stderr.write(text)
     return
@@ -63,7 +63,7 @@ function show(out: string) {
 
 const cli = yargs(args)
   .parserConfiguration({ "populate--": true })
-  .scriptName("opencode")
+  .scriptName("androidcode")
   .wrap(100)
   .help("help", "show help")
   .alias("help", "h")

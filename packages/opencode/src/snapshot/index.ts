@@ -2,13 +2,13 @@ import { Cause, Duration, Effect, Layer, Schedule, Schema, Semaphore, Context } 
 import { ChildProcess, ChildProcessSpawner } from "effect/unstable/process"
 import { formatPatch, structuredPatch } from "diff"
 import path from "path"
-import { AppProcess } from "@opencode-ai/core/process"
+import { AppProcess } from "@androidcode/core/process"
 import { InstanceState } from "@/effect/instance-state"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { Hash } from "@opencode-ai/core/util/hash"
+import { FSUtil } from "@androidcode/core/fs-util"
+import { Hash } from "@androidcode/core/util/hash"
 import { Config } from "@/config/config"
-import { Global } from "@opencode-ai/core/global"
-import * as Log from "@opencode-ai/core/util/log"
+import { Global } from "@androidcode/core/global"
+import * as Log from "@androidcode/core/util/log"
 
 export const Patch = Schema.Struct({
   hash: Schema.String,

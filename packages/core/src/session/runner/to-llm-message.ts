@@ -6,7 +6,7 @@ import {
   type ContentPart,
   type Model,
   type ProviderMetadata,
-} from "@opencode-ai/llm"
+} from "@androidcode/llm"
 import { SessionMessage } from "../message"
 import type { FileAttachment } from "../prompt"
 
@@ -134,6 +134,6 @@ function toLLMMessage(message: SessionMessage.Message, model: Model): Message[] 
   }
 }
 
-/** Translate projected V2 Session history into canonical @opencode-ai/llm context. */
+/** Translate projected V2 Session history into canonical @androidcode/llm context. */
 export const toLLMMessages = (messages: readonly SessionMessage.Message[], model: Model) =>
   messages.flatMap((message) => toLLMMessage(message, model))

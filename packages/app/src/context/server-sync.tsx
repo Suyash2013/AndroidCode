@@ -1,6 +1,6 @@
-import type { Config, OpencodeClient, Path, Project, ProviderAuthResponse, Todo } from "@opencode-ai/sdk/v2/client"
+import type { Config, OpencodeClient, Path, Project, ProviderAuthResponse, Todo } from "@androidcode/sdk/v2/client"
 import { showToast } from "@/utils/toast"
-import { getFilename } from "@opencode-ai/core/util/path"
+import { getFilename } from "@androidcode/core/util/path"
 import {
   batch,
   createContext,
@@ -39,11 +39,11 @@ import { createRefreshQueue } from "./global-sync/queue"
 import { directoryKey } from "./global-sync/utils"
 import { PathKey } from "@/utils/path-key"
 import { createDirSyncContext } from "./directory-sync"
-import { createSimpleContext, NormalizedProviderListResponse } from "@opencode-ai/ui/context"
+import { createSimpleContext, NormalizedProviderListResponse } from "@androidcode/ui/context"
 import { createRefCountMap } from "@/utils/refcount"
 import { useGlobal } from "./global"
 import { ServerConnection, useServer } from "./server"
-import { retry } from "@opencode-ai/core/util/retry"
+import { retry } from "@androidcode/core/util/retry"
 
 type GlobalStore = {
   ready: boolean

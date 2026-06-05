@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test"
 import { Effect, Schema } from "effect"
-import { SystemContext } from "@opencode-ai/core/system-context"
-import { Hash } from "@opencode-ai/core/util/hash"
+import { SystemContext } from "@androidcode/core/system-context"
+import { Hash } from "@androidcode/core/util/hash"
 
 const key = SystemContext.Key.make
 

@@ -1,11 +1,11 @@
 import { describe, expect } from "bun:test"
 import { Effect, Schema } from "effect"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { Config } from "@opencode-ai/core/config"
-import { ConfigProviderPlugin } from "@opencode-ai/core/config/plugin/provider"
-import { ModelV2 } from "@opencode-ai/core/model"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Catalog } from "@androidcode/core/catalog"
+import { Config } from "@androidcode/core/config"
+import { ConfigProviderPlugin } from "@androidcode/core/config/plugin/provider"
+import { ModelV2 } from "@androidcode/core/model"
+import { PluginV2 } from "@androidcode/core/plugin"
+import { ProviderV2 } from "@androidcode/core/provider"
 import { it } from "../plugin/provider-helper"
 
 function request(headers: Record<string, string>, variant?: string) {

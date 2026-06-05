@@ -2,9 +2,9 @@ import { NodePath } from "@effect/platform-node"
 import { Effect, Layer, Path, Schema, Context } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
 import { withTransientReadRetry } from "@/util/effect-http-client"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { Global } from "@opencode-ai/core/global"
-import * as Log from "@opencode-ai/core/util/log"
+import { FSUtil } from "@androidcode/core/fs-util"
+import { Global } from "@androidcode/core/global"
+import * as Log from "@androidcode/core/util/log"
 
 const skillConcurrency = 4
 const fileConcurrency = 8

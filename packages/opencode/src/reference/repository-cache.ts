@@ -1,7 +1,7 @@
 import path from "path"
 import { Context, Effect, Layer, Schema } from "effect"
-import { FSUtil } from "@opencode-ai/core/fs-util"
-import { Flock } from "@opencode-ai/core/util/flock"
+import { FSUtil } from "@androidcode/core/fs-util"
+import { Flock } from "@androidcode/core/util/flock"
 import { Git } from "@/git"
 import {
   repositoryCachePath,

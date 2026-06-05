@@ -1,5 +1,5 @@
-import type { AssistantMessage } from "@opencode-ai/sdk/v2"
-import type { TuiPlugin, TuiPluginApi } from "@opencode-ai/plugin/tui"
+import type { AssistantMessage } from "@androidcode/sdk/v2"
+import type { TuiPlugin, TuiPluginApi } from "@androidcode/plugin/tui"
 import type { InternalTuiPlugin } from "../../plugin/internal"
 import { createMemo } from "solid-js"
 

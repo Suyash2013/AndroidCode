@@ -1,10 +1,10 @@
 import { Workspace } from "@/control-plane/workspace"
 import * as InstanceState from "@/effect/instance-state"
 import { Session } from "@/session/session"
-import { Database } from "@opencode-ai/core/database/database"
-import { EventV2 } from "@opencode-ai/core/event"
+import { Database } from "@androidcode/core/database/database"
+import { EventV2 } from "@androidcode/core/event"
 import { EventV2Bridge } from "@/event-v2-bridge"
-import { EventTable } from "@opencode-ai/core/event/sql"
+import { EventTable } from "@androidcode/core/event/sql"
 import { asc } from "drizzle-orm"
 import { and } from "drizzle-orm"
 import { eq } from "drizzle-orm"
@@ -15,7 +15,7 @@ import { Effect, Scope } from "effect"
 import { HttpApiBuilder, HttpApiError } from "effect/unstable/httpapi"
 import { InstanceHttpApi } from "../api"
 import { HistoryPayload, ReplayPayload, SessionPayload } from "../groups/sync"
-import * as Log from "@opencode-ai/core/util/log"
+import * as Log from "@androidcode/core/util/log"
 
 const log = Log.create({ service: "server.sync" })
 

@@ -1,29 +1,29 @@
-import * as Log from "@opencode-ai/core/util/log"
-import { serviceUse } from "@opencode-ai/core/effect/service-use"
+import * as Log from "@androidcode/core/util/log"
+import { serviceUse } from "@androidcode/core/effect/service-use"
 import path from "path"
 import { pathToFileURL } from "url"
 import os from "os"
 import { mergeDeep } from "remeda"
-import { Global } from "@opencode-ai/core/global"
+import { Global } from "@androidcode/core/global"
 import fsNode from "fs/promises"
-import { Flag } from "@opencode-ai/core/flag/flag"
+import { Flag } from "@androidcode/core/flag/flag"
 import { Auth } from "../auth"
 import { Env } from "../env"
 import { applyEdits, modify } from "jsonc-parser"
-import { InstallationLocal, InstallationVersion } from "@opencode-ai/core/installation/version"
+import { InstallationLocal, InstallationVersion } from "@androidcode/core/installation/version"
 import { existsSync } from "fs"
 import { Account } from "@/account/account"
 import { isRecord } from "@/util/record"
-import type { ConsoleState } from "@opencode-ai/core/v1/config/console-state"
-import { FSUtil } from "@opencode-ai/core/fs-util"
+import type { ConsoleState } from "@androidcode/core/v1/config/console-state"
+import { FSUtil } from "@androidcode/core/fs-util"
 import { InstanceState } from "@/effect/instance-state"
 import { Context, Duration, Effect, Exit, Fiber, Layer, Option, Schema } from "effect"
 import { FetchHttpClient, HttpClient, HttpClientRequest, HttpClientResponse } from "effect/unstable/http"
-import { EffectFlock } from "@opencode-ai/core/util/effect-flock"
+import { EffectFlock } from "@androidcode/core/util/effect-flock"
 import { containsPath, type InstanceContext } from "../project/instance-context"
-import { ConfigV1 } from "@opencode-ai/core/v1/config/config"
-import { ConfigPermissionV1 } from "@opencode-ai/core/v1/config/permission"
-import { ConfigPluginV1 } from "@opencode-ai/core/v1/config/plugin"
+import { ConfigV1 } from "@androidcode/core/v1/config/config"
+import { ConfigPermissionV1 } from "@androidcode/core/v1/config/permission"
+import { ConfigPluginV1 } from "@androidcode/core/v1/config/plugin"
 import { ConfigAgent } from "./agent"
 import { ConfigCommand } from "./command"
 import { ConfigManaged } from "./managed"
@@ -31,7 +31,7 @@ import { ConfigParse } from "./parse"
 import { ConfigPaths } from "./paths"
 import { ConfigPlugin } from "./plugin"
 import { ConfigVariable } from "./variable"
-import { Npm } from "@opencode-ai/core/npm"
+import { Npm } from "@androidcode/core/npm"
 import { withTransientReadRetry } from "@/util/effect-http-client"
 
 const log = Log.create({ service: "config" })
@@ -138,8 +138,8 @@ export class Service extends Context.Service<Service, Interface>()("@opencode/Co
 export const use = serviceUse(Service)
 
 function globalConfigFile() {
-  const candidates = ["opencode.jsonc", "opencode.json", "config.json"].map((file) =>
-    path.join(Global.Path.config, file),
+  const candidates = ["androidcode.jsonc", "androidcode.json", "opencode.jsonc", "opencode.json", "config.json"].map(
+    (file) => path.join(Global.Path.config, file),
   )
   for (const file of candidates) {
     if (existsSync(file)) return file
@@ -250,6 +250,8 @@ export const layer = Layer.effect(
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "config.json"), env))
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "opencode.json"), env))
       result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "opencode.jsonc"), env))
+      result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "androidcode.json"), env))
+      result = mergeConfig(result, yield* loadFile(path.join(Global.Path.config, "androidcode.jsonc"), env))
 
       const legacy = path.join(Global.Path.config, "config")
       if (existsSync(legacy)) {
@@ -413,8 +415,8 @@ export const layer = Layer.effect(
         const deps: Fiber.Fiber<void>[] = []
 
         for (const dir of directories) {
-          if (dir.endsWith(".opencode") || dir === Flag.OPENCODE_CONFIG_DIR) {
-            for (const file of ["opencode.json", "opencode.jsonc"]) {
+          if (dir.endsWith(".opencode") || dir.endsWith(".androidcode") || dir === Flag.OPENCODE_CONFIG_DIR) {
+            for (const file of ["androidcode.json", "androidcode.jsonc", "opencode.json", "opencode.jsonc"]) {
               const source = path.join(dir, file)
               log.debug(`loading config from ${source}`)
               yield* merge(source, yield* loadFile(source, authEnv))
@@ -430,7 +432,7 @@ export const layer = Layer.effect(
             .install(dir, {
               add: [
                 {
-                  name: "@opencode-ai/plugin",
+                  name: "@androidcode/plugin",
                   version: InstallationLocal ? undefined : InstallationVersion,
                 },
               ],
@@ -509,7 +511,7 @@ export const layer = Layer.effect(
 
         const managedDir = ConfigManaged.managedConfigDir()
         if (existsSync(managedDir)) {
-          for (const file of ["opencode.json", "opencode.jsonc"]) {
+          for (const file of ["androidcode.json", "androidcode.jsonc", "opencode.json", "opencode.jsonc"]) {
             const source = path.join(managedDir, file)
             yield* merge(source, yield* loadFile(source), "global")
           }

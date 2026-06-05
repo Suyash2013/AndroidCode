@@ -2,13 +2,13 @@
 // so direct EventV2 consumers can isolate directory/workspace streams.
 import { InstanceRef, WorkspaceRef } from "@/effect/instance-ref"
 import { GlobalBus } from "@/bus/global"
-import { EventV2 } from "@opencode-ai/core/event"
-import { Location } from "@opencode-ai/core/location"
-import { Project } from "@opencode-ai/core/project"
-import { AbsolutePath } from "@opencode-ai/core/schema"
-import "@opencode-ai/core/account"
-import "@opencode-ai/core/catalog"
-import "@opencode-ai/core/session/event"
+import { EventV2 } from "@androidcode/core/event"
+import { Location } from "@androidcode/core/location"
+import { Project } from "@androidcode/core/project"
+import { AbsolutePath } from "@androidcode/core/schema"
+import "@androidcode/core/account"
+import "@androidcode/core/catalog"
+import "@androidcode/core/session/event"
 import { Context, Effect, Layer } from "effect"
 
 export class Service extends Context.Service<Service, EventV2.Interface>()("@opencode/EventV2Bridge") {}

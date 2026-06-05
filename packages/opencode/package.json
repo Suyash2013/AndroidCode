@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/package.json",
   "version": "1.15.13",
-  "name": "opencode",
+  "name": "androidcode",
   "type": "module",
   "license": "MIT",
   "private": true,
@@ -17,7 +17,7 @@
     "dev:temporary": "bun run --conditions=browser ./src/temporary.ts"
   },
   "bin": {
-    "opencode": "./bin/opencode"
+    "androidcode": "./bin/androidcode"
   },
   "exports": {
     "./*": "./src/*.ts"
@@ -32,9 +32,9 @@
   "devDependencies": {
     "@babel/core": "7.28.4",
     "@octokit/webhooks-types": "7.6.1",
-    "@opencode-ai/core": "workspace:*",
-    "@opencode-ai/http-recorder": "workspace:*",
-    "@opencode-ai/script": "workspace:*",
+    "@androidcode/core": "workspace:*",
+    "@androidcode/http-recorder": "workspace:*",
+    "@androidcode/script": "workspace:*",
     "@standard-schema/spec": "1.0.0",
     "@tsconfig/bun": "catalog:",
     "@types/babel__core": "7.20.5",
@@ -84,12 +84,12 @@
     "@octokit/graphql": "9.0.2",
     "@octokit/rest": "catalog:",
     "@openauthjs/openauth": "catalog:",
-    "@opencode-ai/llm": "workspace:*",
-    "@opencode-ai/plugin": "workspace:*",
-    "@opencode-ai/script": "workspace:*",
-    "@opencode-ai/server": "workspace:*",
-    "@opencode-ai/sdk": "workspace:*",
-    "@opencode-ai/ui": "workspace:*",
+    "@androidcode/llm": "workspace:*",
+    "@androidcode/plugin": "workspace:*",
+    "@androidcode/script": "workspace:*",
+    "@androidcode/server": "workspace:*",
+    "@androidcode/sdk": "workspace:*",
+    "@androidcode/ui": "workspace:*",
     "@openrouter/ai-sdk-provider": "2.9.0",
     "@opentelemetry/api": "1.9.0",
     "@opentelemetry/context-async-hooks": "2.6.1",

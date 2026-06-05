@@ -7,7 +7,7 @@ import { useSDK } from "@tui/context/sdk"
 import { useTheme } from "@tui/context/theme"
 import { useKV } from "@tui/context/kv"
 import { useSync } from "@tui/context/sync"
-import { Global } from "@opencode-ai/core/global"
+import { Global } from "@androidcode/core/global"
 import { Locale } from "@/util/locale"
 import "opentui-spinner/solid"
 

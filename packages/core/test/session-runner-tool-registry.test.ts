@@ -1,8 +1,8 @@
 import { describe, expect } from "bun:test"
-import { Tool, ToolFailure } from "@opencode-ai/llm"
-import { PermissionV2 } from "@opencode-ai/core/permission"
-import { SessionV2 } from "@opencode-ai/core/session"
-import { ToolRegistry } from "@opencode-ai/core/tool-registry"
+import { Tool, ToolFailure } from "@androidcode/llm"
+import { PermissionV2 } from "@androidcode/core/permission"
+import { SessionV2 } from "@androidcode/core/session"
+import { ToolRegistry } from "@androidcode/core/tool-registry"
 import { Effect, Exit, Layer, Schema, Scope } from "effect"
 import { testEffect } from "./lib/effect"
 

@@ -1,9 +1,9 @@
 import { EOL } from "os"
 import { Effect } from "effect"
-import { FileSystem } from "@opencode-ai/core/filesystem"
-import { LocationServiceMap } from "@opencode-ai/core/location-layer"
-import { Ripgrep } from "@opencode-ai/core/filesystem/ripgrep"
-import { AbsolutePath, RelativePath } from "@opencode-ai/core/schema"
+import { FileSystem } from "@androidcode/core/filesystem"
+import { LocationServiceMap } from "@androidcode/core/location-layer"
+import { Ripgrep } from "@androidcode/core/filesystem/ripgrep"
+import { AbsolutePath, RelativePath } from "@androidcode/core/schema"
 import { effectCmd } from "../../effect-cmd"
 import { cmd } from "../cmd"
 

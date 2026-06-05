@@ -1,6 +1,6 @@
 import { describe, expect } from "bun:test"
 import { Effect } from "effect"
-import { OpenCode } from "@opencode-ai/core/opencode"
+import { OpenCode } from "@androidcode/core/opencode"
 import { testEffect } from "./lib/effect"
 
 const it = testEffect(OpenCode.layer)

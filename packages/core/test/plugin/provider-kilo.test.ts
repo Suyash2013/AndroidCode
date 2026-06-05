@@ -1,10 +1,10 @@
 import { describe, expect } from "bun:test"
 import { Effect } from "effect"
-import { Catalog } from "@opencode-ai/core/catalog"
-import { PluginV2 } from "@opencode-ai/core/plugin"
-import { ProviderPlugins } from "@opencode-ai/core/plugin/provider"
-import { KiloPlugin } from "@opencode-ai/core/plugin/provider/kilo"
-import { ProviderV2 } from "@opencode-ai/core/provider"
+import { Catalog } from "@androidcode/core/catalog"
+import { PluginV2 } from "@androidcode/core/plugin"
+import { ProviderPlugins } from "@androidcode/core/plugin/provider"
+import { KiloPlugin } from "@androidcode/core/plugin/provider/kilo"
+import { ProviderV2 } from "@androidcode/core/provider"
 import { expectPluginRegistered, it, provider } from "./provider-helper"
 
 describe("KiloPlugin", () => {

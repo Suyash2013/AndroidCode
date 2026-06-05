@@ -2,7 +2,7 @@
 
 import { rm } from "fs/promises"
 import path from "path"
-import { Script } from "@opencode-ai/script"
+import { Script } from "@androidcode/script"
 import { modelsData } from "./generate"
 
 const dir = path.resolve(import.meta.dirname, "..")
@@ -90,7 +90,7 @@ for (const item of targets) {
     `./dist/${name}/package.json`,
     JSON.stringify(
       {
-        name: `@opencode-ai/${name}`,
+        name: `@androidcode/${name}`,
         version: Script.version,
         license: "MIT",
         os: [item.os],
