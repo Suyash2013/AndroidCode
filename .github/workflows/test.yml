@@ -46,6 +46,11 @@ jobs:
         with:
           node-version: "24"
 
+      - name: Use Git Bash instead of WSL
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: echo "C:\Program Files\Git\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
+
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
 
@@ -120,6 +125,11 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "24"
+
+      - name: Use Git Bash instead of WSL
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: echo "C:\Program Files\Git\bin" | Out-File -Append -FilePath $env:GITHUB_PATH -Encoding utf8
 
       - name: Setup Bun
         uses: ./.github/actions/setup-bun
