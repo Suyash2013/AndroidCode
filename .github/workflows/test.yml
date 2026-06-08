@@ -30,7 +30,7 @@ jobs:
           - name: linux
             host: ubuntu-latest
           - name: windows
-            host: [self-hosted, Windows, X64]
+            host: windows-latest
     runs-on: ${{ matrix.settings.host }}
     defaults:
       run:
@@ -108,7 +108,7 @@ jobs:
           - name: linux
             host: ubuntu-latest
           - name: windows
-            host: [self-hosted, Windows, X64]
+            host: windows-latest
     runs-on: ${{ matrix.settings.host }}
     env:
       PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/.playwright-browsers
