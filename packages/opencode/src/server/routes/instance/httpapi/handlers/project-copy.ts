@@ -1,6 +1,6 @@
-import { ProjectCopy } from "@opencode-ai/core/project/copy"
-import { ProjectV2 } from "@opencode-ai/core/project"
-import { AbsolutePath } from "@opencode-ai/core/schema"
+import { ProjectCopy } from "@androidcode/core/project/copy"
+import { ProjectV2 } from "@androidcode/core/project"
+import { AbsolutePath } from "@androidcode/core/schema"
 import { InstanceState } from "@/effect/instance-state"
 import { Effect, Stream } from "effect"
 import { HttpApiBuilder } from "effect/unstable/httpapi"
@@ -8,10 +8,10 @@ import { InstanceHttpApi } from "../api"
 import { ApiProjectCopyError, CreatePayload, RemovePayload } from "../groups/project-copy"
 import { Agent } from "@/agent/agent"
 import { LLM } from "@/session/llm"
-import { LLMEvent } from "@opencode-ai/llm"
+import { LLMEvent } from "@androidcode/llm"
 import { MessageID, SessionID } from "@/session/schema"
 import { Provider } from "@/provider/provider"
-import { Slug } from "@opencode-ai/core/util/slug"
+import { Slug } from "@androidcode/core/util/slug"
 
 const FALLBACK_AGENT: Agent.Info = {
   name: "title",

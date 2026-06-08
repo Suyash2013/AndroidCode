@@ -1,4 +1,4 @@
-import { LLM, LLMClient, LLMError, LLMEvent } from "@opencode-ai/llm"
+import { LLM, LLMClient, LLMError, LLMEvent } from "@androidcode/llm"
 import { Cause, DateTime, Effect, FiberSet, Layer, Semaphore, Stream } from "effect"
 import { EventV2 } from "../../event"
 import { ModelV2 } from "../../model"
@@ -43,7 +43,7 @@ import { QuestionV2 } from "../../question"
  *
  * - One provider turn
  *   - [x] Translate every projected V2 Session message variant into canonical
- *     `@opencode-ai/llm` messages.
+ *     `@androidcode/llm` messages.
  *   - [ ] Resolve policy-filtered built-in, MCP, plugin, and structured-output tool definitions.
  *   - [x] Stream exactly one `llm.stream(request)` provider turn.
  *   - [x] Persist assistant text and usage events incrementally as they arrive.

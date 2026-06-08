@@ -1,7 +1,7 @@
 export * as SessionMessage from "./message"
 
 import { Schema } from "effect"
-import { ProviderMetadata } from "@opencode-ai/llm"
+import { ProviderMetadata } from "@androidcode/llm"
 import { EventV2 } from "../event"
 import { ModelV2 } from "../model"
 import { ToolOutput } from "../tool-output"

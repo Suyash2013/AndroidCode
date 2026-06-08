@@ -1,9 +1,9 @@
 import { describe, expect } from "bun:test"
 import { Effect, Exit, Scope } from "effect"
-import { AgentV2 } from "@opencode-ai/core/agent"
-import { Location } from "@opencode-ai/core/location"
-import { AgentPlugin } from "@opencode-ai/core/plugin/agent"
-import { AbsolutePath } from "@opencode-ai/core/schema"
+import { AgentV2 } from "@androidcode/core/agent"
+import { Location } from "@androidcode/core/location"
+import { AgentPlugin } from "@androidcode/core/plugin/agent"
+import { AbsolutePath } from "@androidcode/core/schema"
 import { location } from "./fixture/location"
 import { testEffect } from "./lib/effect"
 

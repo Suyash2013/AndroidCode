@@ -1,5 +1,5 @@
-import { ProjectCopy } from "@opencode-ai/core/project/copy"
-import { ProjectV2 } from "@opencode-ai/core/project"
+import { ProjectCopy } from "@androidcode/core/project/copy"
+import { ProjectV2 } from "@androidcode/core/project"
 import { Schema } from "effect"
 import { HttpApi, HttpApiEndpoint, HttpApiGroup, HttpApiSchema, OpenApi } from "effect/unstable/httpapi"
 import { Authorization } from "../middleware/authorization"
