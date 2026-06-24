@@ -29,6 +29,7 @@ import { WebSearchTool } from "./websearch"
 import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
+import { AndroidSampleTool } from "./android-sample"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -104,6 +105,7 @@ export const layer = Layer.effect(
     const edit = yield* EditTool
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
+    const androidSample = yield* AndroidSampleTool
     const skilltool = yield* SkillTool
     const agent = yield* Agent.Service
 
@@ -197,6 +199,7 @@ export const layer = Layer.effect(
 
         const tool = yield* Effect.all({
           invalid: Tool.init(invalid),
+          "android-sample": Tool.init(androidSample),
           shell: Tool.init(shell),
           read: Tool.init(read),
           glob: Tool.init(globtool),
@@ -218,6 +221,7 @@ export const layer = Layer.effect(
           custom,
           builtin: [
             tool.invalid,
+            tool["android-sample"],
             ...(questionEnabled ? [tool.question] : []),
             tool.shell,
             tool.read,
